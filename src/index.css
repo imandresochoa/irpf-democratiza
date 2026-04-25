@@ -72,6 +72,28 @@ html {
   color-scheme: light;
   /* Evita que aparezca/desaparezca la barra al cambiar de página (mismo ancho útil). */
   scrollbar-gutter: stable;
+  /* Firefox (y motores con CSS Scrollbars): barra fina, pulgar discreto, raíl transparente. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-400) transparent;
+}
+
+/* Chromium / WebKit: mismo criterio (el estándar de arriba no aplica aquí). */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-400);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-500);
 }
 
 body {
