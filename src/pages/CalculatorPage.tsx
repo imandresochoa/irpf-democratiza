@@ -140,14 +140,14 @@ export function CalculatorPage() {
                 id="gross"
                 type="text"
                 inputMode="decimal"
-                className="mt-1 w-full max-w-xs rounded-lg bg-neutral-100 px-3 py-2 text-base"
+                className="mt-1 w-full max-w-xs rounded-lg bg-neutral-100 px-3 py-2 text-base placeholder:text-neutral-700"
                 value={grossInput}
                 onChange={(e) => setGrossInput(e.target.value)}
                 placeholder="Ej. 35000"
                 autoComplete="off"
               />
               {grossAnnual !== null ? (
-                <p className="mt-1 text-xs text-neutral-500">
+                <p className="mt-1 text-xs text-neutral-600">
                   Equivale a {formatEur(grossAnnual)} / año
                 </p>
               ) : null}
@@ -206,14 +206,14 @@ export function CalculatorPage() {
       {step === 3 && canShowResult && breakdown ? (
         <section className="space-y-6">
           <div>
-            <p className="m-0 text-base text-neutral-500">Salario neto anual estimado ({year})</p>
+            <p className="m-0 text-base text-neutral-600">Salario neto anual estimado ({year})</p>
             <p className="mt-1 mb-0 text-3xl font-semibold tracking-tight text-neutral-900">
               {formatEur(breakdown.salarioNeto)}
             </p>
             <p className="mt-2 text-base text-neutral-600">
               ≈ {formatEur(breakdown.salarioNeto / 12)} / mes (12 pagas)
             </p>
-            <p className="mt-3 text-xs text-neutral-500">
+            <p className="mt-3 text-xs text-neutral-600">
               Bruto considerado: {formatEur(breakdown.salarioBruto)} · IRPF retenido:{' '}
               {formatEur(breakdown.irpfFinal)} · Cot. trabajador: {formatEur(breakdown.cotTrabajador)}
             </p>
@@ -302,7 +302,7 @@ export function CalculatorPage() {
               <DtDd label="Mínimo exento retención" value={formatEur(params.minimoExento, 0)} />
               <DtDd label="Mínimo contribuyente" value={formatEur(params.irpfMinimo, 0)} />
             </dl>
-            <p className="mt-3 text-xs text-neutral-500">
+            <p className="mt-3 text-xs text-neutral-600">
               Art. 20 metadatos: umbral inf. {String(params.art20Meta.uInf)}, reducción máx.{' '}
               {String(params.art20Meta.rMax)}.
             </p>
@@ -322,7 +322,7 @@ export function CalculatorPage() {
 function DtDd({ label, value }: { label: string; value: string }) {
   return (
     <>
-      <dt className="text-neutral-500">{label}</dt>
+      <dt className="text-neutral-600">{label}</dt>
       <dd className="m-0 font-medium text-neutral-900">{value}</dd>
     </>
   )

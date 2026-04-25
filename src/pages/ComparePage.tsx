@@ -60,7 +60,7 @@ export function ComparePage() {
             id="gh"
             type="text"
             inputMode="decimal"
-            className="mt-1 w-full rounded-lg bg-neutral-100 px-3 py-2 text-base"
+            className="mt-1 w-full rounded-lg bg-neutral-100 px-3 py-2 text-base placeholder:text-neutral-700"
             value={gross2026Str}
             onChange={(e) => setGrossStr(e.target.value)}
           />
@@ -89,26 +89,26 @@ export function ComparePage() {
           <h2 className="mt-0 text-base font-semibold text-neutral-900">Resultado</h2>
           <dl className="m-0 grid gap-2 text-base sm:grid-cols-2">
             <div>
-              <dt className="text-neutral-500">IPC acumulado hasta 2026</dt>
+              <dt className="text-neutral-600">IPC acumulado hasta 2026</dt>
               <dd className="m-0 font-medium">{row.ipcAcumuladoPercent} %</dd>
             </div>
             <div>
-              <dt className="text-neutral-500">Bruto nominal en {yearHist}</dt>
+              <dt className="text-neutral-600">Bruto nominal en {yearHist}</dt>
               <dd className="m-0 font-medium">{formatEur(row.salarioBrutoNominal)}</dd>
             </div>
             <div>
-              <dt className="text-neutral-500">Neto histórico (€ 2026)</dt>
+              <dt className="text-neutral-600">Neto histórico (€ 2026)</dt>
               <dd className="m-0 font-medium">{formatEur(row.netoRealEnSuAnoEur2026)}</dd>
             </div>
             <div>
-              <dt className="text-neutral-500">Neto con mismo bruto nominal en 2026</dt>
+              <dt className="text-neutral-600">Neto con mismo bruto nominal en 2026</dt>
               <dd className="m-0 font-medium">{formatEur(row.netoReal2026)}</dd>
             </div>
             <div className="sm:col-span-2">
-              <dt className="text-neutral-500">Diferencia anual de poder adquisitivo (aprox.)</dt>
+              <dt className="text-neutral-600">Diferencia anual de poder adquisitivo (aprox.)</dt>
               <dd className="m-0 text-lg font-semibold text-neutral-900">
                 {formatEur(row.perdidaGananciaAnualPoderAdq)}{' '}
-                <span className="text-base font-normal text-neutral-500">
+                <span className="text-base font-normal text-neutral-600">
                   ({formatEur(row.variacionPoderAdquisitivoMensual)} / mes)
                 </span>
               </dd>

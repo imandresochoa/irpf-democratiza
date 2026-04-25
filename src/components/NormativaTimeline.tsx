@@ -17,7 +17,7 @@ export function NormativaTimeline() {
               <span className="min-w-0 text-base font-medium leading-snug tracking-[-0.01em]">
                 {item.title}
               </span>
-              <span className="shrink-0 text-right text-base font-medium leading-none text-neutral-500 tabular-nums">
+              <span className="shrink-0 text-right text-base font-medium leading-none text-neutral-600 tabular-nums">
                 {item.year}
               </span>
               <span className="sr-only">(enlace externo, nueva pestaña)</span>
