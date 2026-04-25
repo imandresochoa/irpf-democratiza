@@ -110,7 +110,7 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
     return (
       <div
         className={[
-          'flex h-36 w-full min-h-0 items-center justify-center bg-[color-mix(in_srgb,var(--color-focus)_14%,transparent)] text-sm text-neutral-600',
+          'flex h-36 w-full min-h-0 items-center justify-center text-base text-neutral-800 [font-family:var(--font-serif)]',
           className ?? '',
         ].join(' ')}
       >
@@ -125,7 +125,7 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
     if (!hover) return null
     const offsetX = 4
     const gap = 6
-    const approxW = 132
+    const approxW = 160
     const { xPx, yPx, boxW, boxH } = hover
     const left = Math.min(Math.max(6, xPx + offsetX), Math.max(6, boxW - approxW - 6))
     // Cerca del cursor; si arriba no hay sitio, el tip va debajo
@@ -185,11 +185,13 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
       </svg>
       {hp && hover && tooltipStyle ? (
         <div
-          className="pointer-events-none absolute z-10 w-max min-w-0 max-w-[11.5rem] rounded-md border border-[color-mix(in_srgb,var(--color-focus)_55%,var(--color-neutral-200))] bg-[color-mix(in_srgb,var(--color-brand-green-soft)_72%,var(--color-surface))] px-2 py-1.5 text-left text-sm shadow-sm [font-family:var(--font-sans)]"
+          className="pointer-events-none absolute z-10 w-max min-w-0 max-w-[14rem] rounded-xl bg-[color-mix(in_srgb,var(--color-brand-green-soft)_20%,transparent)] px-3 py-2.5 text-left shadow-sm backdrop-blur-md [font-family:var(--font-serif)]"
           style={tooltipStyle}
         >
-          <p className="m-0 text-xs font-medium text-neutral-600">{hp.year}</p>
-          <p className="m-0 text-base text-neutral-900">{formatEur(hp.net, 0)}</p>
+          <p className="m-0 text-base text-neutral-800">{hp.year}</p>
+          <p className="m-0 mt-0.5 text-2xl font-semibold leading-none tracking-[-0.03em] text-neutral-900">
+            {formatEur(hp.net, 0)}
+          </p>
         </div>
       ) : null}
     </div>
