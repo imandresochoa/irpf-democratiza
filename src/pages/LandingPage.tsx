@@ -1,5 +1,40 @@
 import { Link } from 'react-router-dom'
 
+const homeCards = [
+  {
+    title: 'Calcular',
+    description:
+      'Introduce bruto y año. Verás el neto resaltado y un desglose por etapas del cálculo.',
+    to: '/calcular',
+    cta: 'Abrir calculadora',
+    className: 'bg-[var(--color-card-sand)]',
+  },
+  {
+    title: 'Comparar',
+    description:
+      'Fija un salario en euros de 2026 y compara poder adquisitivo con un año anterior.',
+    to: '/comparar',
+    cta: 'Comparar años',
+    className: 'bg-[var(--color-card-mint)]',
+  },
+  {
+    title: 'Manual',
+    description:
+      'Lee el orden del cálculo y las reglas principales detrás de cotizaciones, retenciones e inflación.',
+    to: '/manual',
+    cta: 'Leer manual',
+    className: 'bg-[var(--color-card-lavender)]',
+  },
+  {
+    title: 'Normativa',
+    description:
+      'Consulta los cambios clave en tramos, mínimos, MEI y otros parámetros del modelo.',
+    to: '/normativa',
+    cta: 'Ver fuentes',
+    className: 'bg-[var(--color-card-blue)]',
+  },
+] as const
+
 export function LandingPage() {
   return (
     <div className="space-y-10">
@@ -23,27 +58,24 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 sm:grid-cols-3">
-        <div className="space-y-2">
-          <h2 className="mt-0 text-base font-semibold text-neutral-900">Calcular</h2>
-          <p className="text-base text-neutral-600">
-            Introduce bruto y año. Verás el neto resaltado y un desglose por etapas; puedes abrir el
-            detalle de cada bloque.
-          </p>
-        </div>
-        <div className="space-y-2">
-          <h2 className="mt-0 text-base font-semibold text-neutral-900">Comparar</h2>
-          <p className="text-base text-neutral-600">
-            Fija un salario en &quot;euros de 2026&quot; y compara con un año anterior reescalado por IPC
-            (diciembre a diciembre).
-          </p>
-        </div>
-        <div className="space-y-2">
-          <h2 className="mt-0 text-base font-semibold text-neutral-900">Normativa</h2>
-          <p className="text-base text-neutral-600">
-            Línea de tiempo con cambios clave en tramos, mínimos, MEI y otros parámetros del modelo.
-          </p>
-        </div>
+      <section className="space-y-4" aria-label="Secciones principales">
+        {homeCards.map((card) => (
+          <article
+            key={card.to}
+            className={`${card.className} grid gap-6 rounded-xl p-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:p-8`}
+          >
+            <div className="max-w-xl">
+              <h2 className="mt-0 text-lg font-semibold text-neutral-900">{card.title}</h2>
+              <p className="mb-0 mt-2 text-base text-neutral-800">{card.description}</p>
+            </div>
+            <Link
+              to={card.to}
+              className="inline-flex w-fit items-center rounded-lg bg-neutral-900 px-3 py-2 text-base font-medium text-white no-underline hover:opacity-90"
+            >
+              {card.cta}
+            </Link>
+          </article>
+        ))}
       </section>
     </div>
   )
