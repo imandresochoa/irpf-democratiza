@@ -62,7 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         ].join(' ')}
         onFocusCapture={() => setIsHeaderVisible(true)}
       >
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link
             to="/"
             className="text-base font-semibold tracking-tight text-neutral-900 no-underline"
@@ -85,7 +85,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
       <footer className="py-6 text-center text-xs text-neutral-600">
         Herramienta educativa. No sustituye asesoramiento fiscal o laboral.
       </footer>
