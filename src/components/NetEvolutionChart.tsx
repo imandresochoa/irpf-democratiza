@@ -1,6 +1,6 @@
 import { useCallback, useId, useMemo, useState, type CSSProperties } from 'react'
 import type { TaxYear } from '../domain/tax'
-import { formatEur } from '../lib/format'
+import { formatEur, formatPct } from '../lib/format'
 
 const VIEW = { w: 100, h: 44 }
 
@@ -106,26 +106,20 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
     [points],
   )
 
-  if (!points || points.length === 0) {
-    return (
-      <div
-        className={[
-          'flex h-36 w-full min-h-0 items-center justify-center text-base text-neutral-800 [font-family:var(--font-serif)]',
-          className ?? '',
-        ].join(' ')}
-      >
-        Añade un bruto anual
-      </div>
-    )
-  }
-
-  const hp = hover && layout[hover.index] ? layout[hover.index] : null
+  const hasPoints = Boolean(points && points.length > 0)
+  const hp =
+    hasPoints && hover && layout[hover.index] ? layout[hover.index] : null
+  const firstPoint = hasPoints && points ? points[0]! : null
+  const pctVsFirst =
+    hp && firstPoint && firstPoint.net !== 0
+      ? ((hp.net - firstPoint.net) / firstPoint.net) * 100
+      : null
 
   const tooltipStyle = useMemo((): CSSProperties | null => {
     if (!hover) return null
     const offsetX = 4
     const gap = 6
-    const approxW = 160
+    const approxW = 200
     const { xPx, yPx, boxW, boxH } = hover
     const left = Math.min(Math.max(6, xPx + offsetX), Math.max(6, boxW - approxW - 6))
     // Cerca del cursor; si arriba no hay sitio, el tip va debajo
@@ -138,6 +132,19 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
       : 'translate(0, 0)'
     return { left, top, transform }
   }, [hover])
+
+  if (!hasPoints) {
+    return (
+      <div
+        className={[
+          'flex h-36 w-full min-h-0 items-center justify-center text-base text-neutral-800 [font-family:var(--font-serif)]',
+          className ?? '',
+        ].join(' ')}
+      >
+        Añade un bruto anual
+      </div>
+    )
+  }
 
   return (
     <div
@@ -185,13 +192,22 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
       </svg>
       {hp && hover && tooltipStyle ? (
         <div
-          className="pointer-events-none absolute z-10 w-max min-w-0 max-w-[14rem] rounded-xl bg-[color-mix(in_srgb,var(--color-brand-green-soft)_20%,transparent)] px-3 py-2.5 text-left shadow-sm backdrop-blur-md [font-family:var(--font-serif)]"
+          className="pointer-events-none absolute z-10 w-max min-w-0 max-w-[16rem] rounded-xl bg-[color-mix(in_srgb,var(--color-brand-green-soft)_20%,transparent)] px-3 py-2.5 text-left shadow-sm backdrop-blur-md [font-family:var(--font-serif)]"
           style={tooltipStyle}
         >
           <p className="m-0 text-base text-neutral-800">{hp.year}</p>
           <p className="m-0 mt-0.5 text-2xl font-semibold leading-none tracking-[-0.03em] text-neutral-900">
             {formatEur(hp.net, 0)}
           </p>
+          {firstPoint.net !== 0 && pctVsFirst !== null && Number.isFinite(pctVsFirst) ? (
+            <p className="m-0 mt-1.5 text-sm leading-snug text-neutral-600">
+              <span className="text-neutral-500">Acum. vs {firstPoint.year}</span>{' '}
+              <span className="font-medium text-neutral-800">
+                {pctVsFirst > 0 ? '+' : ''}
+                {formatPct(pctVsFirst, 1)}
+              </span>
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>
