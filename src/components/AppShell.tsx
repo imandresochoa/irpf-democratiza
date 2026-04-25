@@ -94,6 +94,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           <p className="m-0 max-w-md leading-snug">
             Herramienta educativa. No sustituye asesoramiento fiscal o laboral.
           </p>
+          <a
+            href="https://x.com/Jongonzlz/status/2047638381501313508"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--color-accent)] underline-offset-2 hover:underline"
+          >
+            Origen del proyecto
+          </a>
         </div>
       </footer>
     </div>
