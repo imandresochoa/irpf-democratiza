@@ -1,17 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { computePayrollBreakdown, inflationFactorTo2026, TAX_YEARS, type TaxYear } from '../domain/tax'
+import { computePayrollBreakdown, TAX_YEARS, type TaxYear } from '../domain/tax'
 import { EurAmountInput } from '../components/EurAmountInput'
+import { NetEvolutionChart } from '../components/NetEvolutionChart'
 import { formatEur, parseEurInputToNumber } from '../lib/format'
 import heroCharacterImage from '../assets/images/hero-character.svg'
 
 const quickCalcYear: TaxYear = 2026
-const ipcChartYears = TAX_YEARS.filter((year) => year !== 2026)
-const ipcChartPoints = ipcChartYears.map((year) => ({
-  year,
-  percent: Math.round((inflationFactorTo2026(year) - 1) * 100),
-}))
-const maxIpcPercent = Math.max(...ipcChartPoints.map((point) => point.percent))
 
 const homeCards = [
   {
@@ -54,7 +49,6 @@ const homeCards = [
 
 export function LandingPage() {
   const [quickGrossInput, setQuickGrossInput] = useState('15574,85')
-  const [selectedIpcYear, setSelectedIpcYear] = useState<TaxYear>(2012)
 
   const quickGrossAnnual = useMemo(() => {
     const value = parseEurInputToNumber(quickGrossInput)
@@ -66,7 +60,13 @@ export function LandingPage() {
     return computePayrollBreakdown(quickGrossAnnual, quickCalcYear).salarioNeto
   }, [quickGrossAnnual])
 
-  const selectedIpcPercent = Math.round((inflationFactorTo2026(selectedIpcYear) - 1) * 100)
+  const netEvolutionPoints = useMemo(() => {
+    if (quickGrossAnnual === null) return null
+    return TAX_YEARS.map((year) => ({
+      year,
+      net: computePayrollBreakdown(quickGrossAnnual, year).salarioNeto,
+    }))
+  }, [quickGrossAnnual])
 
   return (
     <div className="space-y-10">
@@ -122,37 +122,20 @@ export function LandingPage() {
               />
             </div>
           </div>
-          <div className="flex flex-col justify-between rounded-xl bg-[var(--color-brand-mint-soft)] p-6 lg:col-span-4 lg:min-h-80">
-            <p
-              className="m-0 max-w-44 text-3xl font-semibold leading-none tracking-[-0.025em] text-neutral-900"
-              style={{ fontFamily: 'var(--font-serif)' }}
-            >
-              IPC acumulado
-            </p>
-            <div>
-              <div className="flex items-end justify-between gap-4">
-                <p className="m-0 text-base text-neutral-800">
-                  Desde {selectedIpcYear} hasta 2026
-                </p>
-                <p className="m-0 text-3xl font-semibold tracking-[-0.025em] text-neutral-900">
-                  {selectedIpcPercent}%
-                </p>
-              </div>
-              <div className="mt-8 flex h-20 items-end gap-1.5">
-                {ipcChartPoints.map((point) => (
-                  <button
-                    key={point.year}
-                    type="button"
-                    className={[
-                      'w-full rounded-full transition-colors',
-                      selectedIpcYear === point.year ? 'bg-neutral-900' : 'bg-neutral-900/25 hover:bg-neutral-900/45',
-                    ].join(' ')}
-                    style={{ height: `${Math.max(16, (point.percent / maxIpcPercent) * 80)}px` }}
-                    aria-label={`Ver IPC acumulado desde ${point.year}: ${point.percent}%`}
-                    onClick={() => setSelectedIpcYear(point.year)}
-                  />
-                ))}
-              </div>
+          <div className="flex min-h-80 min-w-0 flex-col overflow-visible rounded-xl bg-[var(--color-brand-green-soft)] lg:col-span-4">
+            <div className="px-6 pt-6">
+              <p
+                className="m-0 text-3xl font-semibold leading-none tracking-[-0.025em] text-neutral-900"
+                style={{ fontFamily: 'var(--font-serif)' }}
+              >
+                Evolución del neto
+              </p>
+              <p className="mb-0 mt-2 text-base text-neutral-800">
+                Mismo bruto en todos los años fiscales (el de la calculadora).
+              </p>
+            </div>
+            <div className="mt-4 flex min-h-0 flex-1 flex-col justify-end">
+              <NetEvolutionChart points={netEvolutionPoints} className="h-40" />
             </div>
           </div>
           <div className="relative flex min-h-80 flex-col justify-end overflow-hidden rounded-xl bg-[var(--color-brand-blue-soft)] p-6 text-neutral-900 lg:col-span-5">

@@ -22,6 +22,15 @@ export function formatEurNumber(n: number, fractionDigits = 2): string {
   } as unknown as Intl.NumberFormatOptions).format(n)
 }
 
+/** Misma forma que `formatEurNumber` pero sin separador de miles (mejor al editar). */
+export function formatEurNumberNoGrouping(n: number, fractionDigits = 2): string {
+  return new Intl.NumberFormat('es-ES', {
+    useGrouping: false,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  } as unknown as Intl.NumberFormatOptions).format(n)
+}
+
 /**
  * Interpreta cadenas como "15574,85", "15.574,85" o "15.574,85 €" (y variantes mientras se edita).
  * Devuelve null si no hay un número finito o la cadena está vacía.

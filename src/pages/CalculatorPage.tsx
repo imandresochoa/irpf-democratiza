@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   computePayrollBreakdown,
@@ -34,10 +34,11 @@ function readCalcInitialFromUrl(): { year: TaxYear; gross: string; step: number 
 
 export function CalculatorPage() {
   const [, setSearchParams] = useSearchParams()
-  const [step, setStep] = useState(() => readCalcInitialFromUrl().step)
+  const [calcFromUrl] = useState(() => readCalcInitialFromUrl())
+  const [step, setStep] = useState(calcFromUrl.step)
   const [inputMode, setInputMode] = useState<'annual' | 'monthly'>('annual')
-  const [grossInput, setGrossInput] = useState(() => readCalcInitialFromUrl().gross)
-  const [year, setYear] = useState<TaxYear>(() => readCalcInitialFromUrl().year)
+  const [grossInput, setGrossInput] = useState(calcFromUrl.gross)
+  const [year, setYear] = useState<TaxYear>(calcFromUrl.year)
 
   const grossAnnual = useMemo(() => {
     const raw = parseEurInputToNumber(String(grossInput))
@@ -138,6 +139,8 @@ export function CalculatorPage() {
                 onValueChange={setGrossInput}
                 placeholder="Ej. 35.000,00 €"
                 autoComplete="off"
+                noGroupingOnFocus
+                selectAllOnFocus
               />
               {grossAnnual !== null ? (
                 <p className="mt-1 text-xs text-neutral-600">

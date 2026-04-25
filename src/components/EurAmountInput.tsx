@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { formatEur, formatEurNumber, parseEurInputToNumber } from '../lib/format'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { formatEur, formatEurNumber, formatEurNumberNoGrouping, parseEurInputToNumber } from '../lib/format'
 
 function formatBlurredDisplay(s: string): string {
   const n = parseEurInputToNumber(s)
@@ -16,6 +16,10 @@ export type EurAmountInputProps = {
   autoComplete?: string
   /** Décimales al editar o mostrar; por defecto 2 (céntimos). */
   fractionDigits?: number
+  /** Si es true, al enfocar no se muestran puntos de miles (solocoma decimal). */
+  noGroupingOnFocus?: boolean
+  /** Selecciona todo el texto al enfocar (sustituir de un golpe). */
+  selectAllOnFocus?: boolean
 }
 
 /**
@@ -30,9 +34,13 @@ export function EurAmountInput({
   placeholder,
   autoComplete = 'off',
   fractionDigits = 2,
+  noGroupingOnFocus = false,
+  selectAllOnFocus = false,
 }: EurAmountInputProps) {
   const [focused, setFocused] = useState(false)
   const [draft, setDraft] = useState(value)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const pendingSelectAllRef = useRef(false)
 
   useEffect(() => {
     if (!focused) {
@@ -42,8 +50,15 @@ export function EurAmountInput({
 
   const show = focused ? draft : formatBlurredDisplay(value)
 
+  useLayoutEffect(() => {
+    if (!selectAllOnFocus || !pendingSelectAllRef.current || !focused) return
+    inputRef.current?.select()
+    pendingSelectAllRef.current = false
+  }, [selectAllOnFocus, focused, show])
+
   return (
     <input
+      ref={inputRef}
       id={id}
       type="text"
       inputMode="decimal"
@@ -56,15 +71,19 @@ export function EurAmountInput({
         setDraft(v)
         onValueChange(v)
       }}
-      onFocus={() => {
+      onFocus={(e) => {
         setFocused(true)
         const n = parseEurInputToNumber(value)
         if (n !== null) {
-          const next = formatEurNumber(n, fractionDigits)
+          const fmt = noGroupingOnFocus ? formatEurNumberNoGrouping : formatEurNumber
+          const next = fmt(n, fractionDigits)
           setDraft(next)
           onValueChange(next)
         } else {
           setDraft(value)
+        }
+        if (selectAllOnFocus) {
+          pendingSelectAllRef.current = true
         }
       }}
       onBlur={(e) => {
