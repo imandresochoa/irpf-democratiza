@@ -93,7 +93,7 @@ export function CalculatorPage() {
             <button
               type="button"
               className={[
-                'rounded-full px-3 py-1 font-medium',
+                'rounded-full px-3 py-1 font-normal',
                 step === s.n
                   ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]'
                   : 'text-neutral-600 hover:bg-neutral-100',
@@ -155,7 +155,7 @@ export function CalculatorPage() {
           </fieldset>
           <button
             type="button"
-            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-base font-medium text-white disabled:opacity-40"
+            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-base font-normal text-white disabled:opacity-40"
             disabled={!canGoStep2}
             onClick={() => setStep(2)}
           >
@@ -187,14 +187,14 @@ export function CalculatorPage() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="rounded-lg bg-neutral-100 px-4 py-2 text-base font-medium text-neutral-800"
+              className="rounded-lg bg-neutral-100 px-4 py-2 text-base font-normal text-neutral-800"
               onClick={() => setStep(1)}
             >
               Atrás
             </button>
             <button
               type="button"
-              className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-base font-medium text-white"
+              className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-base font-normal text-white"
               onClick={() => setStep(3)}
             >
               Ver resultado

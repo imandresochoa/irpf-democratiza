@@ -15,7 +15,7 @@ export function Collapsible({
     <div>
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-2 rounded-lg bg-neutral-100 px-4 py-3 text-left text-base font-medium text-neutral-900"
+        className="flex w-full items-center justify-between gap-2 rounded-lg bg-neutral-100 px-4 py-3 text-left text-base font-normal text-neutral-900"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}

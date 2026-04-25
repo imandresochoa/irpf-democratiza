@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
-    'rounded-md px-3 py-2 text-base font-medium transition-colors',
+    'rounded-md px-3 py-2 text-base font-normal transition-colors',
     isActive
       ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]'
       : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900',
