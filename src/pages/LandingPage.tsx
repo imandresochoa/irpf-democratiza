@@ -20,13 +20,13 @@ export function LandingPage() {
         <div className="flex flex-wrap gap-3">
           <Link
             to="/calcular"
-            className="inline-flex items-center justify-center rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-base font-medium text-white no-underline shadow-sm hover:opacity-95"
+            className="inline-flex items-center justify-center rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-base font-medium text-white no-underline hover:opacity-95"
           >
             Empezar a calcular
           </Link>
           <Link
             to="/manual"
-            className="inline-flex items-center justify-center rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-base font-medium text-neutral-800 no-underline hover:bg-neutral-50"
+            className="inline-flex items-center justify-center rounded-lg bg-neutral-100 px-4 py-2.5 text-base font-medium text-neutral-800 no-underline hover:bg-neutral-200"
           >
             Leer el manual breve
           </Link>
@@ -36,21 +36,21 @@ export function LandingPage() {
       <Disclaimer />
 
       <section className="grid gap-6 sm:grid-cols-3">
-        <div className="rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-5 shadow-sm">
+        <div className="space-y-2">
           <h2 className="mt-0 text-base font-semibold text-neutral-900">Calcular</h2>
           <p className="text-base leading-relaxed text-neutral-600">
             Introduce bruto y año. Verás el neto resaltado y un desglose por etapas; puedes abrir el
             detalle de cada bloque.
           </p>
         </div>
-        <div className="rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-5 shadow-sm">
+        <div className="space-y-2">
           <h2 className="mt-0 text-base font-semibold text-neutral-900">Comparar</h2>
           <p className="text-base leading-relaxed text-neutral-600">
             Fija un salario en &quot;euros de 2026&quot; y compara con un año anterior reescalado por IPC
             (diciembre a diciembre).
           </p>
         </div>
-        <div className="rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-5 shadow-sm">
+        <div className="space-y-2">
           <h2 className="mt-0 text-base font-semibold text-neutral-900">Normativa</h2>
           <p className="text-base leading-relaxed text-neutral-600">
             Línea de tiempo con cambios clave en tramos, mínimos, MEI y otros parámetros del modelo.
@@ -58,7 +58,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-6">
+      <section>
         <h2 className="mt-0 text-lg font-semibold text-neutral-900">Para quién es</h2>
         <ul className="mb-0 mt-3 list-disc space-y-2 pl-5 text-base text-neutral-700">
           <li>

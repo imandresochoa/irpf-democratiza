@@ -86,7 +86,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">{children}</main>
-      <footer className="border-t border-neutral-200 bg-neutral-50 py-6 text-center text-xs text-neutral-500">
+      <footer className="py-6 text-center text-xs text-neutral-500">
         Herramienta educativa. No sustituye asesoramiento fiscal o laboral.
       </footer>
     </div>

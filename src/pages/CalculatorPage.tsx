@@ -93,10 +93,10 @@ export function CalculatorPage() {
             <button
               type="button"
               className={[
-                'rounded-full border px-3 py-1 font-medium',
+                'rounded-full px-3 py-1 font-medium',
                 step === s.n
-                  ? 'border-[var(--color-accent)] bg-[var(--color-accent-muted)] text-[var(--color-accent)]'
-                  : 'border-neutral-200 bg-white text-neutral-600',
+                  ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]'
+                  : 'text-neutral-600 hover:bg-neutral-100',
               ].join(' ')}
               onClick={() => {
                 if (s.n <= 2 || (s.n === 3 && canGoStep2)) setStep(s.n)
@@ -109,7 +109,7 @@ export function CalculatorPage() {
       </ol>
 
       {step === 1 ? (
-        <section className="space-y-4 rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-6 shadow-sm">
+        <section className="space-y-4">
           <fieldset className="m-0 space-y-3 border-0 p-0">
             <legend className="text-base font-semibold text-neutral-900">Importe</legend>
             <div className="flex flex-wrap gap-4">
@@ -140,7 +140,7 @@ export function CalculatorPage() {
                 id="gross"
                 type="text"
                 inputMode="decimal"
-                className="mt-1 w-full max-w-xs rounded-lg border border-neutral-300 px-3 py-2 text-base"
+                className="mt-1 w-full max-w-xs rounded-lg bg-neutral-100 px-3 py-2 text-base"
                 value={grossInput}
                 onChange={(e) => setGrossInput(e.target.value)}
                 placeholder="Ej. 35000"
@@ -165,7 +165,7 @@ export function CalculatorPage() {
       ) : null}
 
       {step === 2 ? (
-        <section className="space-y-4 rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-6 shadow-sm">
+        <section className="space-y-4">
           <h2 className="mt-0 text-base font-semibold text-neutral-900">Año fiscal</h2>
           <div>
             <label htmlFor="year" className="block text-base font-medium text-neutral-700">
@@ -173,7 +173,7 @@ export function CalculatorPage() {
             </label>
             <select
               id="year"
-              className="mt-1 w-full max-w-xs rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base"
+              className="mt-1 w-full max-w-xs rounded-lg bg-neutral-100 px-3 py-2 text-base"
               value={year}
               onChange={(e) => setYear(Number(e.target.value) as TaxYear)}
             >
@@ -187,7 +187,7 @@ export function CalculatorPage() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-base font-medium text-neutral-800"
+              className="rounded-lg bg-neutral-100 px-4 py-2 text-base font-medium text-neutral-800"
               onClick={() => setStep(1)}
             >
               Atrás
@@ -205,7 +205,7 @@ export function CalculatorPage() {
 
       {step === 3 && canShowResult && breakdown ? (
         <section className="space-y-6">
-          <div className="rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-6 shadow-sm">
+          <div>
             <p className="m-0 text-base text-neutral-500">Salario neto anual estimado ({year})</p>
             <p className="mt-1 mb-0 text-3xl font-semibold tracking-tight text-neutral-900">
               {formatEur(breakdown.salarioNeto)}
@@ -220,21 +220,21 @@ export function CalculatorPage() {
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
-                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-base"
+                className="rounded-lg bg-neutral-100 px-3 py-2 text-base"
                 onClick={() => setStep(2)}
               >
                 Cambiar año
               </button>
               <button
                 type="button"
-                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-base"
+                className="rounded-lg bg-neutral-100 px-3 py-2 text-base"
                 onClick={() => setStep(1)}
               >
                 Cambiar importe
               </button>
               <button
                 type="button"
-                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-base"
+                className="rounded-lg bg-neutral-100 px-3 py-2 text-base"
                 onClick={() => {
                   const t = [
                     `Año: ${year}`,

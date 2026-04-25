@@ -12,10 +12,10 @@ export function Collapsible({
   const id = useId()
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <div className="rounded-lg border border-neutral-200 bg-[var(--color-surface-elevated)]">
+    <div>
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-base font-medium text-neutral-900"
+        className="flex w-full items-center justify-between gap-2 rounded-lg bg-neutral-100 px-4 py-3 text-left text-base font-medium text-neutral-900"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}
@@ -26,7 +26,7 @@ export function Collapsible({
         </span>
       </button>
       {open ? (
-        <div id={id} className="border-t border-neutral-100 px-4 py-3 text-base text-neutral-700">
+        <div id={id} className="px-4 py-3 text-base text-neutral-700">
           {children}
         </div>
       ) : null}

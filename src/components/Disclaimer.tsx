@@ -1,9 +1,6 @@
 export function Disclaimer() {
   return (
-    <aside
-      className="rounded-lg border border-neutral-200 bg-[var(--color-surface-elevated)] px-4 py-3 text-base text-neutral-900"
-      role="note"
-    >
+    <aside className="text-base text-neutral-900" role="note">
       <p className="m-0 font-medium">Aviso</p>
       <p className="mt-1 mb-0 text-neutral-700">
         Modelo simplificado de retención por trabajo (sin mínimos personales y familiares completos,

@@ -33,7 +33,7 @@ export function ManualPage() {
       </div>
 
       <nav
-        className="rounded-lg border border-neutral-200 bg-[var(--color-surface-elevated)] p-4"
+        className="bg-neutral-100 p-4"
         aria-label="Índice del manual"
       >
         <p className="mt-0 text-xs font-medium uppercase tracking-wide text-neutral-500">Índice</p>

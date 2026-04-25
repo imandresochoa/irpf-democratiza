@@ -5,9 +5,9 @@ export function NormativaTimeline() {
 
   return (
     <div className="w-full">
-      <ol className="m-0 list-none border-t border-neutral-300 p-0">
+      <ol className="m-0 list-none space-y-1 p-0">
         {items.map((item, i) => (
-          <li key={`${item.year}-${i}-${item.href}`} className="border-b border-neutral-300">
+          <li key={`${item.year}-${i}-${item.href}`}>
             <a
               href={item.href}
               target="_blank"

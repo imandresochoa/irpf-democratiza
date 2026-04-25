@@ -51,7 +51,7 @@ export function ComparePage() {
 
       <Disclaimer />
 
-      <section className="grid gap-4 rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-6 shadow-sm sm:grid-cols-2">
+      <section className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="gh" className="block text-base font-medium text-neutral-700">
             Salario bruto equivalente en 2026 (€)
@@ -60,7 +60,7 @@ export function ComparePage() {
             id="gh"
             type="text"
             inputMode="decimal"
-            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
+            className="mt-1 w-full rounded-lg bg-neutral-100 px-3 py-2 text-base"
             value={gross2026Str}
             onChange={(e) => setGrossStr(e.target.value)}
           />
@@ -71,7 +71,7 @@ export function ComparePage() {
           </label>
           <select
             id="yh"
-            className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base"
+            className="mt-1 w-full rounded-lg bg-neutral-100 px-3 py-2 text-base"
             value={yearHist}
             onChange={(e) => setYearHist(Number(e.target.value) as TaxYear)}
           >
@@ -85,7 +85,7 @@ export function ComparePage() {
       </section>
 
       {row ? (
-        <section className="space-y-3 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+        <section className="space-y-3">
           <h2 className="mt-0 text-base font-semibold text-neutral-900">Resultado</h2>
           <dl className="m-0 grid gap-2 text-base sm:grid-cols-2">
             <div>
