@@ -70,6 +70,8 @@
 
 html {
   color-scheme: light;
+  /* Evita que aparezca/desaparezca la barra al cambiar de página (mismo ancho útil). */
+  scrollbar-gutter: stable;
 }
 
 body {
