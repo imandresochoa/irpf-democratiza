@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computePayrollBreakdown, computeBracketQuotas, computeNominaAgregada } from './computePayroll'
+import { computePayrollBreakdown, computeBracketQuotas, computeNominaAgregada, round2 } from './computePayroll'
 import { getYearParameters } from './parameters'
 import { computeInflationComparisonRow } from './compare'
 import { inflationFactorTo2026 } from './inflation'
@@ -72,4 +72,20 @@ describe('computeInflationComparisonRow', () => {
     const row = computeInflationComparisonRow(2026, 50000)
     expect(row.perdidaGananciaAnualPoderAdq).toBeCloseTo(0, 0)
   })
+
+  it('for 2026, neto en EUR2026 coincide con nómina agregada sin deflactor', () => {
+    const g = 42000
+    const row = computeInflationComparisonRow(2026, g)
+    expect(row.netoRealEnSuAnoEur2026).toBe(computeNominaAgregada(g, 2026).salarioNeto)
+  })
+
+  it('año histórico: neto reexpresado = redondeo(neto nominal bruto_ajustado × factor IPC a 2026)', () => {
+    const g2026 = 50000
+    const y = 2012
+    const inf = inflationFactorTo2026(y)
+    const brutoNom = g2026 / inf
+    const expected = round2(computeNominaAgregada(brutoNom, y).salarioNeto * inf)
+    expect(computeInflationComparisonRow(y, g2026).netoRealEnSuAnoEur2026).toBe(expected)
+  })
 })
+
