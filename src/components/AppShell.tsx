@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { BrandLogo } from './BrandLogo'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
@@ -65,9 +66,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link
             to="/"
-            className="text-base font-semibold tracking-tight text-neutral-900 no-underline"
+            className="flex items-center gap-2.5 text-base font-semibold tracking-tight text-neutral-900 no-underline"
           >
-            Nómina e IRPF
+            <BrandLogo menu className="h-8 w-auto shrink-0" />
+            <span>Nómina e IRPF</span>
           </Link>
           <nav className="flex flex-wrap items-center gap-1" aria-label="Principal">
             <NavLink to="/manual" className={navLinkClass}>
@@ -86,8 +88,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
-      <footer className="py-6 text-center text-xs text-neutral-600">
-        Herramienta educativa. No sustituye asesoramiento fiscal o laboral.
+      <footer className="px-4 py-8 text-center text-xs text-neutral-600 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-3">
+          <BrandLogo className="h-12 w-auto opacity-95" />
+          <p className="m-0 max-w-md leading-snug">
+            Herramienta educativa. No sustituye asesoramiento fiscal o laboral.
+          </p>
+        </div>
       </footer>
     </div>
   )
