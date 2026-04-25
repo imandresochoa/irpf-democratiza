@@ -139,8 +139,6 @@ export function CalculatorPage() {
                 onValueChange={setGrossInput}
                 placeholder="Ej. 35.000,00 €"
                 autoComplete="off"
-                noGroupingOnFocus
-                selectAllOnFocus
               />
               {grossAnnual !== null ? (
                 <p className="mt-1 text-xs text-neutral-600">

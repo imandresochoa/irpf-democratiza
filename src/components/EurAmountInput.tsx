@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { formatEur, formatEurNumber, formatEurNumberNoGrouping, parseEurInputToNumber } from '../lib/format'
 
 function formatBlurredDisplay(s: string): string {
@@ -16,14 +17,14 @@ export type EurAmountInputProps = {
   autoComplete?: string
   /** Décimales al editar o mostrar; por defecto 2 (céntimos). */
   fractionDigits?: number
-  /** Si es true, al enfocar no se muestran puntos de miles (solocoma decimal). */
+  /**
+   * Al enfocar, sin puntos de miles (solo edición con coma decimal). Sin foco, miles + €. Por defecto true.
+   */
   noGroupingOnFocus?: boolean
-  /** Selecciona todo el texto al enfocar (sustituir de un golpe). */
-  selectAllOnFocus?: boolean
 }
 
 /**
- * Texto: en foco sin € (solo número es-ES); al perder el foco, miles, coma decimales y €.
+ * Sin foco: miles (puntos), coma decimales y €. Con foco: sin puntos de miles, sin € (texto puro de edición).
  * El `value` en el padre puede ser "35000", "15.574,85" o "15.574,85 €" — se normaliza al blur.
  */
 export function EurAmountInput({
@@ -34,13 +35,10 @@ export function EurAmountInput({
   placeholder,
   autoComplete = 'off',
   fractionDigits = 2,
-  noGroupingOnFocus = false,
-  selectAllOnFocus = false,
+  noGroupingOnFocus = true,
 }: EurAmountInputProps) {
   const [focused, setFocused] = useState(false)
   const [draft, setDraft] = useState(value)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const pendingSelectAllRef = useRef(false)
 
   useEffect(() => {
     if (!focused) {
@@ -50,15 +48,8 @@ export function EurAmountInput({
 
   const show = focused ? draft : formatBlurredDisplay(value)
 
-  useLayoutEffect(() => {
-    if (!selectAllOnFocus || !pendingSelectAllRef.current || !focused) return
-    inputRef.current?.select()
-    pendingSelectAllRef.current = false
-  }, [selectAllOnFocus, focused, show])
-
   return (
     <input
-      ref={inputRef}
       id={id}
       type="text"
       inputMode="decimal"
@@ -71,19 +62,21 @@ export function EurAmountInput({
         setDraft(v)
         onValueChange(v)
       }}
-      onFocus={(e) => {
-        setFocused(true)
+      onFocus={() => {
         const n = parseEurInputToNumber(value)
         if (n !== null) {
           const fmt = noGroupingOnFocus ? formatEurNumberNoGrouping : formatEurNumber
           const next = fmt(n, fractionDigits)
-          setDraft(next)
+          flushSync(() => {
+            setFocused(true)
+            setDraft(next)
+          })
           onValueChange(next)
         } else {
-          setDraft(value)
-        }
-        if (selectAllOnFocus) {
-          pendingSelectAllRef.current = true
+          flushSync(() => {
+            setFocused(true)
+            setDraft(value)
+          })
         }
       }}
       onBlur={(e) => {
