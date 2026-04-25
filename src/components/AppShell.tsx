@@ -1,5 +1,5 @@
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import type { ReactNode } from 'react'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
@@ -10,9 +10,58 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   ].join(' ')
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true)
+  const lastScrollY = useRef(0)
+
+  useEffect(() => {
+    const topVisibilityThreshold = 48
+    const scrollDeltaThreshold = 12
+    let frameId: number | null = null
+
+    const updateHeaderVisibility = () => {
+      const currentScrollY = window.scrollY
+      const scrollDelta = currentScrollY - lastScrollY.current
+
+      if (currentScrollY <= topVisibilityThreshold) {
+        setIsHeaderVisible(true)
+        lastScrollY.current = currentScrollY
+        frameId = null
+        return
+      }
+
+      if (Math.abs(scrollDelta) >= scrollDeltaThreshold) {
+        setIsHeaderVisible(scrollDelta < 0)
+        lastScrollY.current = currentScrollY
+      }
+
+      frameId = null
+    }
+
+    const handleScroll = () => {
+      if (frameId !== null) return
+      frameId = window.requestAnimationFrame(updateHeaderVisibility)
+    }
+
+    lastScrollY.current = window.scrollY
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId)
+      }
+    }
+  }, [])
+
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b border-neutral-200 bg-[var(--color-surface-elevated)]/95 backdrop-blur-sm">
+      <header
+        className={[
+          'sticky top-0 z-10 bg-[var(--color-surface)] transition-transform duration-200 ease-out motion-reduce:transition-none',
+          isHeaderVisible ? 'translate-y-0' : '-translate-y-full',
+        ].join(' ')}
+        onFocusCapture={() => setIsHeaderVisible(true)}
+      >
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link
             to="/"
