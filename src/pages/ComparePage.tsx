@@ -2,13 +2,8 @@ import { useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { computeInflationComparisonRow, isTaxYear, type TaxYear, TAX_YEARS } from '../domain/tax'
 import { Disclaimer } from '../components/Disclaimer'
-import { formatEur } from '../lib/format'
-
-function parseNum(s: string | null): number | null {
-  if (!s) return null
-  const n = Number(s.replace(',', '.'))
-  return Number.isFinite(n) && n >= 0 ? n : null
-}
+import { EurAmountInput } from '../components/EurAmountInput'
+import { formatEur, parseEurInputToNumber } from '../lib/format'
 
 export function ComparePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -19,7 +14,8 @@ export function ComparePage() {
   }, [searchParams])
 
   const gross2026Str = searchParams.get('g') ?? '50000'
-  const grossNum = parseNum(gross2026Str) ?? 0
+  const grossParsed = parseEurInputToNumber(gross2026Str)
+  const grossNum = grossParsed !== null && grossParsed >= 0 ? grossParsed : 0
 
   const row = useMemo(() => {
     if (grossNum <= 0) return null
@@ -56,13 +52,12 @@ export function ComparePage() {
           <label htmlFor="gh" className="block text-base font-medium text-neutral-700">
             Salario bruto equivalente en 2026 (€)
           </label>
-          <input
+          <EurAmountInput
             id="gh"
-            type="text"
-            inputMode="decimal"
             className="mt-1 w-full rounded-lg bg-neutral-100 px-3 py-2 text-base placeholder:text-neutral-700"
             value={gross2026Str}
-            onChange={(e) => setGrossStr(e.target.value)}
+            onValueChange={setGrossStr}
+            placeholder="Ej. 50.000,00 €"
           />
         </div>
         <div>

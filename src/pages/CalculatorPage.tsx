@@ -9,7 +9,8 @@ import {
 } from '../domain/tax'
 import { Disclaimer } from '../components/Disclaimer'
 import { Collapsible } from '../components/Collapsible'
-import { formatEur, formatPct } from '../lib/format'
+import { EurAmountInput } from '../components/EurAmountInput'
+import { formatEur, formatPct, parseEurInputToNumber } from '../lib/format'
 
 function parseYear(s: string | null): TaxYear | null {
   if (!s) return null
@@ -17,19 +18,13 @@ function parseYear(s: string | null): TaxYear | null {
   return isTaxYear(n) ? n : null
 }
 
-function parseGross(s: string | null): number | null {
-  if (!s) return null
-  const n = Number(s.replace(',', '.'))
-  if (!Number.isFinite(n) || n < 0) return null
-  return n
-}
-
 function readCalcInitialFromUrl(): { year: TaxYear; gross: string; step: number } {
   const params = new URLSearchParams(
     typeof globalThis.location !== 'undefined' ? globalThis.location.search : '',
   )
   const y = parseYear(params.get('y'))
-  const g = parseGross(params.get('g'))
+  const gRaw = params.get('g')
+  const g = gRaw !== null && gRaw !== '' ? parseEurInputToNumber(gRaw) : null
   return {
     year: y ?? 2026,
     gross: g !== null ? String(Math.round(g * 100) / 100) : '',
@@ -45,8 +40,8 @@ export function CalculatorPage() {
   const [year, setYear] = useState<TaxYear>(() => readCalcInitialFromUrl().year)
 
   const grossAnnual = useMemo(() => {
-    const raw = Number(String(grossInput).replace(',', '.'))
-    if (!Number.isFinite(raw) || raw < 0) return null
+    const raw = parseEurInputToNumber(String(grossInput))
+    if (raw === null || raw < 0) return null
     return inputMode === 'monthly' ? raw * 12 : raw
   }, [grossInput, inputMode])
 
@@ -136,14 +131,12 @@ export function CalculatorPage() {
               <label htmlFor="gross" className="block text-base font-medium text-neutral-700">
                 {inputMode === 'annual' ? 'Salario bruto anual (€)' : 'Salario bruto mensual (€)'}
               </label>
-              <input
+              <EurAmountInput
                 id="gross"
-                type="text"
-                inputMode="decimal"
                 className="mt-1 w-full max-w-xs rounded-lg bg-neutral-100 px-3 py-2 text-base placeholder:text-neutral-700"
                 value={grossInput}
-                onChange={(e) => setGrossInput(e.target.value)}
-                placeholder="Ej. 35000"
+                onValueChange={setGrossInput}
+                placeholder="Ej. 35.000,00 €"
                 autoComplete="off"
               />
               {grossAnnual !== null ? (
