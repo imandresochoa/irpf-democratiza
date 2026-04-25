@@ -1,6 +1,6 @@
-# IRPF claro
+# Simulador de nómina e IRPF
 
-SPA educativa (React + TypeScript + Vite) para entender el paso del salario bruto al neto en España entre **2012 y 2026**, con cotizaciones a la Seguridad Social, reducción por trabajo, escala del IRPF, deducción vinculada al SMI (en los años del modelo) y tope de retención. Incluye una comparativa de **poder adquisitivo** reescalando nominas históricas con IPC diciembre–diciembre hasta 2026.
+Aplicación web (React, TypeScript, Vite) para explicar el paso del salario bruto al neto en España entre **2012 y 2026**: cotizaciones a la Seguridad Social, reducción por trabajo, escala del IRPF, deducción vinculada al SMI (en los años del modelo) y tope de retención. Incluye una comparativa de **poder adquisitivo** reescalando nóminas históricas con IPC diciembre–diciembre hasta 2026.
 
 ## Requisitos
 

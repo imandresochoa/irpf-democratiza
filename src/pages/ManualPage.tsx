@@ -24,7 +24,7 @@ export function ManualPage() {
       <div>
         <h1 className="mt-0 text-2xl font-semibold text-neutral-900">Manual breve</h1>
         <p className="text-sm text-neutral-600">
-          Capítulos cortos alineados con el código del simulador.{' '}
+          Capítulos cortos alineados con las etapas del cálculo.{' '}
           <Link to="/calcular" className="text-[var(--color-accent)] no-underline hover:underline">
             Ir al calculador
           </Link>

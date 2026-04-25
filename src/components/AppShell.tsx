@@ -18,7 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             to="/"
             className="text-sm font-semibold tracking-tight text-neutral-900 no-underline"
           >
-            IRPF claro
+            Nómina e IRPF
           </Link>
           <nav className="flex flex-wrap items-center gap-1" aria-label="Principal">
             <NavLink to="/manual" className={navLinkClass}>

@@ -9,10 +9,10 @@ export function LandingPage() {
           Salario neto e IRPF
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
-          Entiende tu nómina, paso a paso, sin abrumar.
+          Del bruto al neto: nómina e IRPF, paso a paso
         </h1>
         <p className="max-w-2xl text-lg leading-relaxed text-neutral-600">
-          Esta herramienta desglosa cómo pasar del bruto al neto en España entre 2012 y 2026: cotizaciones
+          Aquí puedes ver cómo se pasa del salario bruto al neto en España entre 2012 y 2026: cotizaciones
           a la Seguridad Social, reducciones por trabajo, tramos del IRPF, deducciones y el tope de
           retención. También puedes comparar el poder adquisitivo ajustando por inflación acumulada
           hasta 2026.
@@ -39,8 +39,8 @@ export function LandingPage() {
         <div className="rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-5 shadow-sm">
           <h2 className="mt-0 text-base font-semibold text-neutral-900">Calcular</h2>
           <p className="text-sm leading-relaxed text-neutral-600">
-            Introduce bruto y año. Verás el neto destacado y un desglose en pasos, con detalle técnico
-            colapsable.
+            Introduce bruto y año. Verás el neto resaltado y un desglose por etapas; puedes abrir el
+            detalle de cada bloque.
           </p>
         </div>
         <div className="rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-5 shadow-sm">
@@ -62,11 +62,11 @@ export function LandingPage() {
         <h2 className="mt-0 text-lg font-semibold text-neutral-900">Para quién es</h2>
         <ul className="mb-0 mt-3 list-disc space-y-2 pl-5 text-sm text-neutral-700">
           <li>
-            Personas que quieren entender el orden del cálculo sin hojas de cálculo opacas.
+            Cualquier persona que quiera seguir el orden del cálculo con cifras concretas.
           </li>
           <li>
-            Quien pueda revisar supuestos y parámetros (economía, fiscalidad, ingeniería) y proponer
-            mejoras al modelo.
+            Perfiles que trabajan con fiscalidad, economía o datos de nómina y necesitan contrastar
+            supuestos y resultados del modelo.
           </li>
         </ul>
       </section>

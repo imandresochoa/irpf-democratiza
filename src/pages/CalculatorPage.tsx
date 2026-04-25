@@ -283,7 +283,7 @@ export function CalculatorPage() {
             </ul>
           </Collapsible>
 
-          <Collapsible title="Parámetros del año (control)">
+          <Collapsible title="Parámetros del año">
             <dl className="m-0 grid gap-2 text-sm sm:grid-cols-2">
               <DtDd label="Base máx. cotización" value={formatEur(params.baseMax, 0)} />
               <DtDd
