@@ -92,7 +92,7 @@ export function CalculatorPage() {
                 'rounded-full px-3 py-1 font-normal',
                 step === s.n
                   ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]'
-                  : 'text-neutral-600 hover:bg-neutral-100',
+                  : 'text-neutral-600 transition-colors hover:bg-neutral-200',
               ].join(' ')}
               onClick={() => {
                 if (s.n <= 2 || (s.n === 3 && canGoStep2)) setStep(s.n)
@@ -149,7 +149,7 @@ export function CalculatorPage() {
           </fieldset>
           <button
             type="button"
-            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-base font-normal text-white disabled:opacity-40"
+            className="rounded-lg bg-black px-4 py-2 text-base font-normal text-white transition-opacity hover:opacity-95 disabled:opacity-40"
             disabled={!canGoStep2}
             onClick={() => setStep(2)}
           >
@@ -181,14 +181,14 @@ export function CalculatorPage() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="rounded-lg bg-neutral-100 px-4 py-2 text-base font-normal text-neutral-800"
+              className="rounded-lg border border-black bg-transparent px-4 py-2 text-base font-normal text-neutral-800 transition-colors duration-200 hover:bg-black hover:text-white active:bg-neutral-800"
               onClick={() => setStep(1)}
             >
               Atrás
             </button>
             <button
               type="button"
-              className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-base font-normal text-white"
+              className="rounded-lg bg-black px-4 py-2 text-base font-normal text-white transition-opacity hover:opacity-95"
               onClick={() => setStep(3)}
             >
               Ver resultado
@@ -214,21 +214,21 @@ export function CalculatorPage() {
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
-                className="rounded-lg bg-neutral-100 px-3 py-2 text-base"
+                className="rounded-lg border border-black bg-transparent px-3 py-2 text-base font-normal text-neutral-800 transition-colors duration-200 hover:bg-neutral-800 hover:text-white"
                 onClick={() => setStep(2)}
               >
                 Cambiar año
               </button>
               <button
                 type="button"
-                className="rounded-lg bg-neutral-100 px-3 py-2 text-base"
+                className="rounded-lg border border-black bg-transparent px-3 py-2 text-base font-normal text-neutral-800 transition-colors duration-200 hover:bg-neutral-800 hover:text-white"
                 onClick={() => setStep(1)}
               >
                 Cambiar importe
               </button>
               <button
                 type="button"
-                className="rounded-lg bg-neutral-100 px-3 py-2 text-base"
+                className="rounded-lg border border-black bg-transparent px-3 py-2 text-base font-normal text-neutral-800 transition-colors duration-200 hover:bg-neutral-800 hover:text-white"
                 onClick={() => {
                   const t = [
                     `Año: ${year}`,
