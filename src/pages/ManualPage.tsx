@@ -23,7 +23,7 @@ export function ManualPage() {
     <div className="space-y-8">
       <div>
         <h1 className="mt-0 text-2xl font-semibold text-neutral-900">Manual breve</h1>
-        <p className="text-sm text-neutral-600">
+        <p className="text-base text-neutral-600">
           Capítulos cortos alineados con las etapas del cálculo.{' '}
           <Link to="/calcular" className="text-[var(--color-accent)] no-underline hover:underline">
             Ir al calculador
@@ -42,7 +42,7 @@ export function ManualPage() {
             <li key={s.id}>
               <Link
                 to={`/manual/${s.id}`}
-                className="text-sm text-[var(--color-accent)] no-underline hover:underline"
+                className="text-base text-[var(--color-accent)] no-underline hover:underline"
               >
                 {s.title}
               </Link>
@@ -53,7 +53,7 @@ export function ManualPage() {
 
       <article id="orden" className="scroll-mt-20 space-y-3">
         <h2 className="text-lg font-semibold text-neutral-900">Orden del cálculo</h2>
-        <ol className="list-decimal space-y-2 pl-5 text-sm text-neutral-700">
+        <ol className="list-decimal space-y-2 pl-5 text-base text-neutral-700">
           <li>Salario bruto anual.</li>
           <li>Base de cotización (tope a la base máxima de ese año).</li>
           <li>Cotizaciones empleador y trabajador (incl. MEI y, si procede, solidaridad sobre exceso).</li>
@@ -69,7 +69,7 @@ export function ManualPage() {
 
       <article id="ss" className="scroll-mt-20 space-y-3">
         <h2 className="text-lg font-semibold text-neutral-900">Cotizaciones (SS)</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">
+        <p className="text-base leading-relaxed text-neutral-700">
           Se aplican tipos por conceptos (comunes, desempleo, etc.) a la base cotizada. A partir de 2023
           entra el MEI con tramos por año. Con exceso sobre la base máxima, el modelo añade cotización
           de solidaridad repartida 5/6 empleador y 1/6 trabajador en los años configurados.
@@ -78,7 +78,7 @@ export function ManualPage() {
 
       <article id="rendimiento" className="scroll-mt-20 space-y-3">
         <h2 className="text-lg font-semibold text-neutral-900">Rendimiento y reducciones</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">
+        <p className="text-base leading-relaxed text-neutral-700">
           Los umbrales y pendientes de la reducción por trabajo cambian por periodos (incluido el régimen
           transitorio de 2018). El resultado es una base imponible menor que el rendimiento neto del
           trabajo antes de tramos.
@@ -87,7 +87,7 @@ export function ManualPage() {
 
       <article id="irpf" className="scroll-mt-20 space-y-3">
         <h2 className="text-lg font-semibold text-neutral-900">IRPF: tramos y cuota</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">
+        <p className="text-base leading-relaxed text-neutral-700">
           La escala estatal del IRPF se actualiza por años: número de tramos, límites y tipos. La cuota
           íntegra es la suma de cada tramo marginal aplicado a la base imponible.
         </p>
@@ -95,7 +95,7 @@ export function ManualPage() {
 
       <article id="retencion" className="scroll-mt-20 space-y-3">
         <h2 className="text-lg font-semibold text-neutral-900">Retención y neto</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">
+        <p className="text-base leading-relaxed text-neutral-700">
           Tras la cuota teórica y deducciones del modelo, la retención efectiva no supera el límite legal
           del 43% sobre la parte del bruto que excede del mínimo exento de retención del año. El salario
           neto es lo que queda en manos del trabajador en esta simplificación.
@@ -104,7 +104,7 @@ export function ManualPage() {
 
       <article id="inflacion" className="scroll-mt-20 space-y-3">
         <h2 className="text-lg font-semibold text-neutral-900">Inflación y comparativa</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">
+        <p className="text-base leading-relaxed text-neutral-700">
           La comparativa toma variaciones IPC diciembre a diciembre año a año, acumuladas hasta 2026. Un
           bruto &quot;equivalente en 2026&quot; se traduce en bruto nominal del año histórico dividiendo
           por ese factor; se recalcula la nómina de aquel año y se reescala todo a euros de 2026 para

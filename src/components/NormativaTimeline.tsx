@@ -14,10 +14,10 @@ export function NormativaTimeline() {
               rel="noopener noreferrer"
               className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-6 py-[1.125rem] text-neutral-900 no-underline transition-colors hover:text-neutral-700 sm:gap-10"
             >
-              <span className="min-w-0 text-lg font-semibold leading-snug tracking-[-0.01em]">
+              <span className="min-w-0 text-base font-medium leading-snug tracking-[-0.01em]">
                 {item.title}
               </span>
-              <span className="shrink-0 text-right text-lg font-medium leading-none text-neutral-600 tabular-nums">
+              <span className="shrink-0 text-right text-base font-medium leading-none text-neutral-500 tabular-nums">
                 {item.year}
               </span>
               <span className="sr-only">(enlace externo, nueva pestaña)</span>

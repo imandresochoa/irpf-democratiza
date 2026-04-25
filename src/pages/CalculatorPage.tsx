@@ -72,7 +72,7 @@ export function CalculatorPage() {
     <div className="space-y-8">
       <div>
         <h1 className="mt-0 text-2xl font-semibold text-neutral-900">Calcular</h1>
-        <p className="text-sm text-neutral-600">
+        <p className="text-base text-neutral-600">
           Tres pasos: importe, año fiscal, resultado.{' '}
           <Link to="/manual/orden" className="text-[var(--color-accent)] no-underline hover:underline">
             Ver orden del cálculo
@@ -83,7 +83,7 @@ export function CalculatorPage() {
 
       <Disclaimer />
 
-      <ol className="flex flex-wrap gap-2 text-sm" aria-label="Progreso">
+      <ol className="flex flex-wrap gap-2 text-base" aria-label="Progreso">
         {[
           { n: 1, label: 'Importe' },
           { n: 2, label: 'Año' },
@@ -113,7 +113,7 @@ export function CalculatorPage() {
           <fieldset className="m-0 space-y-3 border-0 p-0">
             <legend className="text-base font-semibold text-neutral-900">Importe</legend>
             <div className="flex flex-wrap gap-4">
-              <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <label className="flex cursor-pointer items-center gap-2 text-base">
                 <input
                   type="radio"
                   name="mode"
@@ -122,7 +122,7 @@ export function CalculatorPage() {
                 />
                 Bruto anual
               </label>
-              <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <label className="flex cursor-pointer items-center gap-2 text-base">
                 <input
                   type="radio"
                   name="mode"
@@ -133,14 +133,14 @@ export function CalculatorPage() {
               </label>
             </div>
             <div>
-              <label htmlFor="gross" className="block text-sm font-medium text-neutral-700">
+              <label htmlFor="gross" className="block text-base font-medium text-neutral-700">
                 {inputMode === 'annual' ? 'Salario bruto anual (€)' : 'Salario bruto mensual (€)'}
               </label>
               <input
                 id="gross"
                 type="text"
                 inputMode="decimal"
-                className="mt-1 w-full max-w-xs rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                className="mt-1 w-full max-w-xs rounded-lg border border-neutral-300 px-3 py-2 text-base"
                 value={grossInput}
                 onChange={(e) => setGrossInput(e.target.value)}
                 placeholder="Ej. 35000"
@@ -155,7 +155,7 @@ export function CalculatorPage() {
           </fieldset>
           <button
             type="button"
-            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-base font-medium text-white disabled:opacity-40"
             disabled={!canGoStep2}
             onClick={() => setStep(2)}
           >
@@ -168,12 +168,12 @@ export function CalculatorPage() {
         <section className="space-y-4 rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-6 shadow-sm">
           <h2 className="mt-0 text-base font-semibold text-neutral-900">Año fiscal</h2>
           <div>
-            <label htmlFor="year" className="block text-sm font-medium text-neutral-700">
+            <label htmlFor="year" className="block text-base font-medium text-neutral-700">
               Año
             </label>
             <select
               id="year"
-              className="mt-1 w-full max-w-xs rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
+              className="mt-1 w-full max-w-xs rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base"
               value={year}
               onChange={(e) => setYear(Number(e.target.value) as TaxYear)}
             >
@@ -187,14 +187,14 @@ export function CalculatorPage() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-800"
+              className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-base font-medium text-neutral-800"
               onClick={() => setStep(1)}
             >
               Atrás
             </button>
             <button
               type="button"
-              className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white"
+              className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-base font-medium text-white"
               onClick={() => setStep(3)}
             >
               Ver resultado
@@ -206,11 +206,11 @@ export function CalculatorPage() {
       {step === 3 && canShowResult && breakdown ? (
         <section className="space-y-6">
           <div className="rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-6 shadow-sm">
-            <p className="m-0 text-sm text-neutral-500">Salario neto anual estimado ({year})</p>
+            <p className="m-0 text-base text-neutral-500">Salario neto anual estimado ({year})</p>
             <p className="mt-1 mb-0 text-3xl font-semibold tracking-tight text-neutral-900">
               {formatEur(breakdown.salarioNeto)}
             </p>
-            <p className="mt-2 text-sm text-neutral-600">
+            <p className="mt-2 text-base text-neutral-600">
               ≈ {formatEur(breakdown.salarioNeto / 12)} / mes (12 pagas)
             </p>
             <p className="mt-3 text-xs text-neutral-500">
@@ -220,21 +220,21 @@ export function CalculatorPage() {
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
-                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm"
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-base"
                 onClick={() => setStep(2)}
               >
                 Cambiar año
               </button>
               <button
                 type="button"
-                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm"
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-base"
                 onClick={() => setStep(1)}
               >
                 Cambiar importe
               </button>
               <button
                 type="button"
-                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm"
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-base"
                 onClick={() => {
                   const t = [
                     `Año: ${year}`,
@@ -273,7 +273,7 @@ export function CalculatorPage() {
           <Collapsible title="Cuotas por tramo IRPF">
             <ul className="m-0 list-none space-y-1 p-0">
               {breakdown.cuotasPorTramo.map((t) => (
-                <li key={t.index} className="flex justify-between gap-4 text-sm">
+                <li key={t.index} className="flex justify-between gap-4 text-base">
                   <span>
                     Tramo {t.index} ({formatPct(t.ratePercent, 1)})
                   </span>
@@ -284,7 +284,7 @@ export function CalculatorPage() {
           </Collapsible>
 
           <Collapsible title="Parámetros del año">
-            <dl className="m-0 grid gap-2 text-sm sm:grid-cols-2">
+            <dl className="m-0 grid gap-2 text-base sm:grid-cols-2">
               <DtDd label="Base máx. cotización" value={formatEur(params.baseMax, 0)} />
               <DtDd
                 label="SS empleador (sin MEI)"
@@ -308,7 +308,7 @@ export function CalculatorPage() {
             </p>
           </Collapsible>
 
-          <p className="text-sm">
+          <p className="text-base">
             <Link to={`/comparar?y=${year}&g=${Math.round((grossAnnual ?? 0) * 100) / 100}`} className="text-[var(--color-accent)] no-underline hover:underline">
               Comparar poder adquisitivo con otros años →
             </Link>

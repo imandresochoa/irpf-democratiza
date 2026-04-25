@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
-    'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+    'rounded-md px-3 py-2 text-base font-medium transition-colors',
     isActive
       ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]'
       : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900',
@@ -65,7 +65,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link
             to="/"
-            className="text-sm font-semibold tracking-tight text-neutral-900 no-underline"
+            className="text-base font-semibold tracking-tight text-neutral-900 no-underline"
           >
             Nómina e IRPF
           </Link>

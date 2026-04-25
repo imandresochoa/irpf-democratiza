@@ -43,7 +43,7 @@ export function ComparePage() {
     <div className="space-y-8">
       <div>
         <h1 className="mt-0 text-2xl font-semibold text-neutral-900">Comparar (IPC a 2026)</h1>
-        <p className="text-sm text-neutral-600">
+        <p className="text-base text-neutral-600">
           Fija un bruto en euros de 2026 y un año histórico. Se calcula el bruto nominal que sería
           equivalente por IPC y el neto reescalado vs el neto si cobrases ese mismo bruto en 2026.
         </p>
@@ -53,25 +53,25 @@ export function ComparePage() {
 
       <section className="grid gap-4 rounded-xl border border-neutral-200 bg-[var(--color-surface-elevated)] p-6 shadow-sm sm:grid-cols-2">
         <div>
-          <label htmlFor="gh" className="block text-sm font-medium text-neutral-700">
+          <label htmlFor="gh" className="block text-base font-medium text-neutral-700">
             Salario bruto equivalente en 2026 (€)
           </label>
           <input
             id="gh"
             type="text"
             inputMode="decimal"
-            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
             value={gross2026Str}
             onChange={(e) => setGrossStr(e.target.value)}
           />
         </div>
         <div>
-          <label htmlFor="yh" className="block text-sm font-medium text-neutral-700">
+          <label htmlFor="yh" className="block text-base font-medium text-neutral-700">
             Año a comparar
           </label>
           <select
             id="yh"
-            className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base"
             value={yearHist}
             onChange={(e) => setYearHist(Number(e.target.value) as TaxYear)}
           >
@@ -87,7 +87,7 @@ export function ComparePage() {
       {row ? (
         <section className="space-y-3 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
           <h2 className="mt-0 text-base font-semibold text-neutral-900">Resultado</h2>
-          <dl className="m-0 grid gap-2 text-sm sm:grid-cols-2">
+          <dl className="m-0 grid gap-2 text-base sm:grid-cols-2">
             <div>
               <dt className="text-neutral-500">IPC acumulado hasta 2026</dt>
               <dd className="m-0 font-medium">{row.ipcAcumuladoPercent} %</dd>
@@ -108,7 +108,7 @@ export function ComparePage() {
               <dt className="text-neutral-500">Diferencia anual de poder adquisitivo (aprox.)</dt>
               <dd className="m-0 text-lg font-semibold text-neutral-900">
                 {formatEur(row.perdidaGananciaAnualPoderAdq)}{' '}
-                <span className="text-sm font-normal text-neutral-500">
+                <span className="text-base font-normal text-neutral-500">
                   ({formatEur(row.variacionPoderAdquisitivoMensual)} / mes)
                 </span>
               </dd>
@@ -116,10 +116,10 @@ export function ComparePage() {
           </dl>
         </section>
       ) : (
-        <p className="text-sm text-neutral-600">Introduce un importe bruto válido.</p>
+        <p className="text-base text-neutral-600">Introduce un importe bruto válido.</p>
       )}
 
-      <p className="text-sm">
+      <p className="text-base">
         <Link to="/calcular" className="text-[var(--color-accent)] no-underline hover:underline">
           ← Volver al calculador
         </Link>

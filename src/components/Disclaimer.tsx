@@ -1,7 +1,7 @@
 export function Disclaimer() {
   return (
     <aside
-      className="rounded-lg border border-neutral-200 bg-[var(--color-surface-elevated)] px-4 py-3 text-sm text-neutral-900"
+      className="rounded-lg border border-neutral-200 bg-[var(--color-surface-elevated)] px-4 py-3 text-base text-neutral-900"
       role="note"
     >
       <p className="m-0 font-medium">Aviso</p>
