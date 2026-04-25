@@ -1,0 +1,154 @@
+import type { BracketQuotaDetail, PayrollBreakdown, TaxYear, YearTaxParams } from './types'
+import { getYearParameters } from './parameters'
+
+export function round2(n: number): number {
+  return Math.round(n * 100) / 100
+}
+
+/** Reparte la base liquidable en cuotas por tramos IRPF */
+export function computeBracketQuotas(
+  baseLiq: number,
+  tramos: YearTaxParams['tramosIrpf'],
+): { details: BracketQuotaDetail[]; cuotaTotal: number } {
+  const details: BracketQuotaDetail[] = tramos.map(([, tipo], i) => ({
+    index: i + 1,
+    ratePercent: Math.round(tipo * 1000) / 10,
+    amount: 0,
+  }))
+
+  if (baseLiq <= 0) {
+    return { details, cuotaTotal: 0 }
+  }
+
+  let cuotaTotal = 0
+  let limAnt = 0
+
+  for (let i = 0; i < tramos.length; i++) {
+    const [lim, tipo] = tramos[i]!
+    if (baseLiq > lim) {
+      const cuota = (lim - limAnt) * tipo
+      details[i]!.amount = cuota
+      cuotaTotal += cuota
+      limAnt = lim
+    } else {
+      const cuota = (baseLiq - limAnt) * tipo
+      details[i]!.amount = cuota
+      cuotaTotal += cuota
+      break
+    }
+  }
+
+  return { details, cuotaTotal }
+}
+
+function applySolidarity(
+  p: YearTaxParams,
+  excesoBase: number,
+  baseCotizacion: number,
+  cotEmpresa: number,
+  cotTrabajador: number,
+): { cotEmpresa: number; cotTrabajador: number } {
+  if (!p.solidaridad.length || excesoBase <= 0) {
+    return { cotEmpresa, cotTrabajador }
+  }
+  const tramo1Limite = baseCotizacion * 0.1
+  const tramo2Limite = baseCotizacion * 0.5
+  const exceso1 = Math.min(excesoBase, tramo1Limite)
+  const exceso2 = Math.min(Math.max(0, excesoBase - tramo1Limite), tramo2Limite - tramo1Limite)
+  const exceso3 = Math.max(0, excesoBase - tramo2Limite)
+  const rates = p.solidaridad
+  const cuotaSolTotal =
+    exceso1 * rates[0]![1] + exceso2 * rates[1]![1] + exceso3 * rates[2]![1]
+  return {
+    cotEmpresa: cotEmpresa + cuotaSolTotal * (5 / 6),
+    cotTrabajador: cotTrabajador + cuotaSolTotal * (1 / 6),
+  }
+}
+
+/**
+ * Desglose completo alineado con la lógica del script Python (procesar_ano).
+ */
+export function computePayrollBreakdown(salarioBruto: number, year: TaxYear): PayrollBreakdown {
+  const p = getYearParameters(year)
+  const baseCotizacion = Math.min(salarioBruto, p.baseMax)
+  const excesoBase = Math.max(0, salarioBruto - p.baseMax)
+
+  const tipoEmpresa =
+    Object.values(p.ssTipos).reduce((s, x) => s + x[0], 0) + p.mei[0]
+  const tipoTrabajador =
+    Object.values(p.ssTipos).reduce((s, x) => s + x[1], 0) + p.mei[1]
+
+  let cotEmpresa = baseCotizacion * tipoEmpresa
+  let cotTrabajador = baseCotizacion * tipoTrabajador
+  ;({ cotEmpresa, cotTrabajador } = applySolidarity(p, excesoBase, baseCotizacion, cotEmpresa, cotTrabajador))
+
+  const costeLaboral = salarioBruto + cotEmpresa
+  const rendimientoPrevio = salarioBruto - cotTrabajador
+  const redTrabajo = p.reduccionTrabajo(rendimientoPrevio)
+  const rendimientoNeto = Math.max(0, rendimientoPrevio - p.gastosFijos)
+  const baseImponible = Math.max(0, rendimientoNeto - redTrabajo)
+
+  const { details: cuotasPorTramoRaw, cuotaTotal: cuotaIntegra } = computeBracketQuotas(
+    baseImponible,
+    p.tramosIrpf,
+  )
+  const cuotaMinimo = p.irpfMinimo * p.tramosIrpf[0]![1]
+  const cuotaTeorica = Math.max(0, cuotaIntegra - cuotaMinimo)
+  const dedSmi = p.deduccionSmi(salarioBruto)
+  const cuotaTrasSmi = Math.max(0, cuotaTeorica - dedSmi)
+  const limiteRetencion = Math.max(0, (salarioBruto - p.minimoExento) * 0.43)
+  const irpfFinal = Math.min(cuotaTrasSmi, limiteRetencion)
+  const salarioNeto = salarioBruto - cotTrabajador - irpfFinal
+
+  const cuotasPorTramo = cuotasPorTramoRaw.map((d) => ({
+    ...d,
+    amount: round2(d.amount),
+  }))
+
+  return {
+    year,
+    salarioBruto,
+    baseCotizacion,
+    excesoBase,
+    tipoEmpresa,
+    tipoTrabajador,
+    cotEmpresa: round2(cotEmpresa),
+    cotTrabajador: round2(cotTrabajador),
+    costeLaboral: round2(costeLaboral),
+    rendimientoPrevio: round2(rendimientoPrevio),
+    gastosFijos: p.gastosFijos,
+    reduccionTrabajo: round2(redTrabajo),
+    rendimientoNeto: round2(rendimientoNeto),
+    baseImponible: round2(baseImponible),
+    cuotasPorTramo,
+    cuotaIntegra: round2(cuotaIntegra),
+    cuotaMinimoPersonal: round2(cuotaMinimo),
+    cuotaTeorica: round2(cuotaTeorica),
+    deduccionSmi: round2(dedSmi),
+    cuotaTrasSmi: round2(cuotaTrasSmi),
+    limiteRetencion43: round2(limiteRetencion),
+    irpfFinal: round2(irpfFinal),
+    salarioNeto: round2(salarioNeto),
+  }
+}
+
+/** Versión agregada para comparativas (mismos números que calcular_nomina_agregada) */
+export function computeNominaAgregada(
+  bruto: number,
+  year: TaxYear,
+): {
+  costeLaboral: number
+  cotEmpresa: number
+  cotTrabajador: number
+  irpfFinal: number
+  salarioNeto: number
+} {
+  const b = computePayrollBreakdown(bruto, year)
+  return {
+    costeLaboral: b.costeLaboral,
+    cotEmpresa: b.cotEmpresa,
+    cotTrabajador: b.cotTrabajador,
+    irpfFinal: b.irpfFinal,
+    salarioNeto: b.salarioNeto,
+  }
+}
