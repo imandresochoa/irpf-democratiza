@@ -70,32 +70,37 @@ export function LandingPage() {
 
   return (
     <div className="space-y-10">
-      <section className="grid min-h-[calc(100vh-7rem)] gap-6 pt-6 lg:h-[calc(100vh-7rem)] lg:grid-rows-[auto_minmax(18rem,1fr)]">
-        <div className="grid gap-8 md:grid-cols-[minmax(0,1.25fr)_minmax(24rem,0.75fr)] md:items-start">
-          <h1
-            className="m-0 text-[clamp(3rem,5vw,4.75rem)] font-normal leading-[1.03] tracking-[-0.04em] text-neutral-800"
-            style={{ fontFamily: 'var(--font-serif)' }}
-          >
-            <span className="block lg:whitespace-nowrap">Entiende cuánto cobras</span>
-            <span className="block">de verdad</span>
-          </h1>
-          <div className="max-w-md justify-self-start pt-3 md:pt-8 lg:pt-10">
-            <p className="m-0 text-lg text-neutral-800">
-              Calcula tu salario neto, compara años y entiende qué parte se va en cotizaciones e IRPF.
-              Todo con cifras claras, contexto histórico y enlaces a fuentes oficiales.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                to="/calcular"
-                className="inline-flex items-center justify-center rounded-lg bg-neutral-800 px-4 py-2 text-base font-normal text-white no-underline [font-family:var(--font-sans)] hover:opacity-95"
+      <section
+        className="flex w-full min-h-[calc(100dvh-7rem)] flex-col sm:min-h-[calc(100vh-7rem)]"
+        aria-label="Intro"
+      >
+        <div className="min-h-0 w-full flex-1 basis-0" aria-hidden="true" />
+        <div className="w-full shrink-0">
+          <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-12 lg:gap-x-4 lg:gap-y-0">
+            <div className="@container min-w-0 lg:col-span-7">
+              <h1
+                className="m-0 w-full [font-size:clamp(1.25rem,0.2rem+6cqw,6rem)] [font-family:var(--font-sans)] font-semibold leading-[1.2] text-neutral-900"
               >
-                Empezar a calcular
-              </Link>
+                Descubre cuál es tu salario real después de impuestos
+              </h1>
+            </div>
+            <div className="flex w-full min-w-0 flex-col pt-0 lg:col-span-5 lg:pt-0.5">
+              <p className="m-0 text-hero-lead [font-family:var(--font-serif)] text-neutral-800">
+                Entiende qué parte de tu salario se destina a IRPF y cotizaciones, compara tu poder adquisitivo con años anteriores y consulta las fuentes oficiales detrás de cada cálculo.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3 lg:mt-8">
+                <Link
+                  to="/calcular"
+                  className="inline-flex items-center justify-center rounded-lg bg-neutral-800 px-4 py-2.5 text-base font-normal text-white no-underline [font-family:var(--font-sans)] hover:opacity-95"
+                >
+                  Empezar a calcular
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-
-        <div className="grid content-end gap-4 md:grid-cols-2 lg:grid-cols-12">
+        <div className="h-24 w-full shrink-0 sm:h-32" aria-hidden="true" />
+        <div className="grid w-full shrink-0 content-start gap-4 md:grid-cols-2 lg:grid-cols-12">
           <div className="flex flex-col justify-between rounded-xl bg-neutral-100 p-6 lg:col-span-3 lg:min-h-80">
             <p
               className="m-0 whitespace-nowrap text-3xl font-semibold leading-none tracking-[-0.025em] text-neutral-900"
@@ -130,8 +135,8 @@ export function LandingPage() {
               >
                 Evolución del neto
               </p>
-              <p className="mb-0 mt-2 text-base text-neutral-800">
-                Mismo bruto en todos los años fiscales (el de la calculadora).
+              <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
+                Evolución del salario neto para el mismo salario bruto, año a año.
               </p>
             </div>
             <div className="mt-4 flex min-h-0 flex-1 flex-col justify-end">
