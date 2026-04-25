@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { computePayrollBreakdown, TAX_YEARS, type TaxYear } from '../domain/tax'
+import { computeInflationComparisonRow, computePayrollBreakdown, TAX_YEARS, type TaxYear } from '../domain/tax'
 import { EurAmountInput } from '../components/EurAmountInput'
 import { NetEvolutionChart } from '../components/NetEvolutionChart'
 import { formatEur, parseEurInputToNumber } from '../lib/format'
@@ -9,6 +9,15 @@ import heroCharacterImage from '../assets/images/hero-character.svg'
 const quickCalcYear: TaxYear = 2026
 
 const homeCards = [
+  {
+    title: 'Manual',
+    description:
+      'Lee el orden del cálculo y las reglas principales detrás de cotizaciones, retenciones e inflación.',
+    to: '/manual',
+    cta: 'Leer manual',
+    className: 'bg-neutral-100',
+    imageLabel: 'Guía de cálculo',
+  },
   {
     title: 'Calcular',
     description:
@@ -26,15 +35,6 @@ const homeCards = [
     cta: 'Comparar años',
     className: 'bg-neutral-100',
     imageLabel: 'Comparativa anual',
-  },
-  {
-    title: 'Manual',
-    description:
-      'Lee el orden del cálculo y las reglas principales detrás de cotizaciones, retenciones e inflación.',
-    to: '/manual',
-    cta: 'Leer manual',
-    className: 'bg-neutral-100',
-    imageLabel: 'Guía de cálculo',
   },
   {
     title: 'Normativa',
@@ -60,12 +60,13 @@ export function LandingPage() {
     return computePayrollBreakdown(quickGrossAnnual, quickCalcYear).salarioNeto
   }, [quickGrossAnnual])
 
+  /** Mismo criterio que en /comparar: bruto fijado en euros 2026, neto reexpresado a poder adquisitivo 2026 (IPC encadenado). */
   const netEvolutionPoints = useMemo(() => {
     if (quickGrossAnnual === null) return null
-    return TAX_YEARS.map((year) => ({
-      year,
-      net: computePayrollBreakdown(quickGrossAnnual, year).salarioNeto,
-    }))
+    return TAX_YEARS.map((year) => {
+      const row = computeInflationComparisonRow(year, quickGrossAnnual)
+      return { year, net: row.netoRealEnSuAnoEur2026 }
+    })
   }, [quickGrossAnnual])
 
   return (
@@ -91,9 +92,9 @@ export function LandingPage() {
               <div className="mt-6 flex flex-wrap gap-3 lg:mt-8">
                 <Link
                   to="/calcular"
-                  className="inline-flex items-center justify-center rounded-lg bg-neutral-800 px-4 py-2.5 text-base font-normal text-white no-underline [font-family:var(--font-sans)] hover:opacity-95"
+                  className="inline-flex items-center justify-center rounded-lg bg-black px-4 py-2.5 text-base font-normal text-white no-underline [font-family:var(--font-sans)] transition-opacity hover:opacity-95"
                 >
-                  Empezar a calcular
+                  Calculadora de sueldo neto
                 </Link>
               </div>
             </div>
@@ -116,7 +117,7 @@ export function LandingPage() {
             </div>
             <div>
               <label htmlFor="quick-gross" className="block text-base text-neutral-800">
-                Bruto anual
+                Bruto anual (€ {quickCalcYear})
               </label>
               <EurAmountInput
                 id="quick-gross"
@@ -136,7 +137,8 @@ export function LandingPage() {
                 Evolución del neto
               </p>
               <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
-                Evolución del salario neto para el mismo salario bruto, año a año.
+                Neto de cada ejercicio (norma de ese año) reexpresado a euros {quickCalcYear} con el IPC, como en
+                Comparar.
               </p>
             </div>
             <div className="mt-4 flex min-h-0 flex-1 flex-col justify-end">
@@ -161,7 +163,7 @@ export function LandingPage() {
                 href="https://x.com/imandresochoa"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0 self-end rounded-md px-3 py-2 text-base font-normal text-neutral-800 no-underline [font-family:var(--font-sans)] hover:bg-neutral-800 hover:text-white"
+                className="shrink-0 self-end rounded-md px-3 py-2 text-base font-normal text-neutral-800 no-underline [font-family:var(--font-sans)] transition-colors duration-200 hover:bg-neutral-800 hover:text-white"
               >
                 @imandresochoa
               </a>
@@ -186,7 +188,7 @@ export function LandingPage() {
               <p className="mb-0 mt-3 max-w-lg text-lg text-neutral-800">{card.description}</p>
               <Link
                 to={card.to}
-                className="mt-8 flex w-fit items-center rounded-lg border border-neutral-800 px-4 py-2.5 text-base font-normal text-neutral-800 no-underline [font-family:var(--font-sans)] hover:bg-neutral-800 hover:text-white"
+                className="mt-8 flex w-fit items-center rounded-lg border border-black px-4 py-2.5 text-base font-normal text-neutral-800 no-underline [font-family:var(--font-sans)] transition-colors duration-200 hover:bg-neutral-800 hover:text-white"
               >
                 {card.cta}
               </Link>
