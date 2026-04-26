@@ -4,7 +4,9 @@ import {
   computeInflationComparisonRow,
   computePayrollBreakdown,
   INFLATION_COMPARISON_REF_YEAR,
+  IPC_ANUAL_DIC,
   netoReexpresadoAeurAñoElegido,
+  precios2012HastaAnio,
   TAX_YEARS,
 } from '../domain/tax'
 import { useQuickGross } from '../context/QuickGrossContext'
@@ -13,11 +15,12 @@ import { PurchasingPowerRefYearExplorer } from '../components/PurchasingPowerRef
 import { YearValueTable } from '../components/YearValueTable'
 import { EurAmountInput } from '../components/EurAmountInput'
 import { NetEvolutionChart } from '../components/NetEvolutionChart'
+import { MultiSeriesEvolutionChart, type MultiSeries } from '../components/MultiSeriesEvolutionChart'
 import { formatEur, formatPct, parseEurInputToNumber } from '../lib/format'
 
 /** Misma caja y espaciado para Poder adquisitivo e IRPF (comparar ejercicios). */
 const kComparisonTableCardClass =
-  'flex min-w-0 flex-col gap-5 rounded-xl border border-neutral-200/70 bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-6'
+  'flex min-w-0 flex-col gap-5 rounded-xl bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-6'
 const kComparisonTableTitle = 'm-0 min-w-0 flex-1 pr-1 text-lg font-medium leading-snug text-neutral-800 sm:pr-2 sm:text-xl'
 const kComparisonTableHeadline = 'm-0 shrink-0 pl-2 text-right text-lg font-medium leading-snug tabular-nums text-neutral-500 sm:max-w-[48%] sm:pl-3 sm:text-xl'
 const kComparisonTableDesc = 'mb-0 mt-2 text-sm leading-relaxed text-neutral-600 sm:text-base'
@@ -113,6 +116,60 @@ export function LandingPage() {
       return { year, net: row.costeLaboralEur2012 }
     })
   }, [brutoEur2012])
+
+  /**
+   * Series del gráfico comparado: tres líneas en % acumulado vs 2012 (IPC, poder
+   * adquisitivo del neto real e IRPF). Se usa el bruto fijo en € 2012 para anclar 0
+   * en el primer año.
+   */
+  const multiSeriesVs2012 = useMemo<MultiSeries[]>(() => {
+    if (comparisonTableRows == null) return []
+    const baseline = comparisonTableRows.find((r) => r.year === 2012)
+    if (baseline == null) return []
+    const ipcPoints = TAX_YEARS.map((year) => ({
+      year,
+      value: (precios2012HastaAnio(year) - 1) * 100,
+      yoyPercent:
+        year === 2012 ? null : IPC_ANUAL_DIC[year] !== undefined ? IPC_ANUAL_DIC[year] * 100 : null,
+    }))
+    const out: MultiSeries[] = [
+      { id: 'ipc', label: 'IPC', variant: 'terracotta', points: ipcPoints },
+    ]
+    if (baseline.netoEur > 0) {
+      out.push({
+        id: 'poder',
+        label: 'Poder adquisitivo (neto real)',
+        variant: 'green',
+        points: comparisonTableRows.map((r, i) => {
+          const prev = i > 0 ? comparisonTableRows[i - 1]! : null
+          const yoy =
+            prev != null && prev.netoEur > 0 ? ((r.netoEur / prev.netoEur - 1) * 100) : null
+          return {
+            year: r.year,
+            value: (r.netoEur / baseline.netoEur - 1) * 100,
+            yoyPercent: r.year === 2012 ? null : yoy,
+          }
+        }),
+      })
+    }
+    if (baseline.irpf > 0) {
+      out.push({
+        id: 'irpf',
+        label: 'IRPF retenido',
+        variant: 'lavender',
+        points: comparisonTableRows.map((r, i) => {
+          const prev = i > 0 ? comparisonTableRows[i - 1]! : null
+          const yoy = prev != null && prev.irpf > 0 ? ((r.irpf / prev.irpf - 1) * 100) : null
+          return {
+            year: r.year,
+            value: (r.irpf / baseline.irpf - 1) * 100,
+            yoyPercent: r.year === 2012 ? null : yoy,
+          }
+        }),
+      })
+    }
+    return out
+  }, [comparisonTableRows])
 
   /** Neto anual / coste laboral (mismos € 2012 comparables). */
   const netOverLaborCostPoints = useMemo(() => {
@@ -229,6 +286,27 @@ export function LandingPage() {
             grossNominal={quickGrossAnnual}
             netNominal={quickNetAnnual}
           />
+        </div>
+
+        <div className="mt-8 w-full shrink-0 sm:mt-10" aria-label="Evolución comparada">
+          <div className="flex min-w-0 flex-col gap-5 rounded-xl bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-7">
+            <div>
+              <h2
+                className="m-0 text-2xl font-semibold leading-tight text-neutral-900 [font-family:var(--font-serif)] sm:text-3xl"
+              >
+                Evolución comparada
+              </h2>
+              <p className="mt-2 m-0 max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
+                IPC, poder adquisitivo (neto real) e IRPF retenido en porcentaje respecto a 2012. Al pasar el
+                cursor por el gráfico, la leyenda y el recuadro muestran ese porcentaje y el cambio
+                intra-anual de ese año (respecto al anterior). Haz clic en una serie para resaltarla.
+              </p>
+            </div>
+            <MultiSeriesEvolutionChart
+              series={multiSeriesVs2012}
+              yFormat={(n) => formatPct(n, 1)}
+            />
+          </div>
         </div>
 
         <div className="h-8 w-full shrink-0 sm:h-10" aria-hidden="true" />

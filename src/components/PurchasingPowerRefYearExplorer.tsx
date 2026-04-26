@@ -10,7 +10,7 @@ import {
 import { formatEur, formatPct } from '../lib/format'
 
 const kCompareBoxClass =
-  'flex min-h-0 min-w-0 flex-1 flex-col justify-between rounded-lg border border-neutral-200/80 bg-white/30 p-4 sm:min-h-[11.5rem] sm:p-5'
+  'flex min-h-0 min-w-0 flex-1 flex-col justify-between rounded-lg bg-white/30 p-4 sm:min-h-[11.5rem] sm:p-5'
 const kNetCompareFigureClass = 'm-0 text-2xl font-semibold leading-tight tabular-nums text-neutral-900 sm:text-3xl'
 
 type PurchasingPowerRefYearExplorerProps = {
@@ -19,9 +19,9 @@ type PurchasingPowerRefYearExplorerProps = {
   netNominal: number | null
 }
 
-/** Misma piel y ritmo que las tablas de comparativa (`kComparisonTableCardClass`). */
+/** Misma piel y ritmo que las tablas de comparativa (sin borde de tarjeta). */
 const kExplorerCardClass =
-  'flex min-w-0 flex-col gap-5 overflow-hidden rounded-xl border border-neutral-200/70 bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-7'
+  'flex min-w-0 flex-col gap-5 overflow-hidden rounded-xl bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-7'
 
 const kSelectClass =
   'h-11 w-full min-w-0 cursor-pointer appearance-none rounded-lg border border-neutral-200/80 bg-[var(--color-surface)] py-0 pl-3.5 pr-12 text-base font-medium text-neutral-900 [font-family:var(--font-sans)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]'
@@ -71,19 +71,14 @@ export function PurchasingPowerRefYearExplorer({
   /** Texto breve: variación del neto al pasar a € constantes + subida/bajada del IPC entre años. */
   const resumenPoderAdquisitivo = useMemo(() => {
     if (netNominal == null || netInRef == null || refYear === currentYear) return null
-    const ratio = netInRef / netNominal
     if (refYear < currentYear) {
-      const fPrecios = getAccumulatedInflation(refYear, currentYear)
-      const subidaPreciosPct = 100 * (fPrecios - 1)
-      const bajaUnidadPct = 100 * (1 - ratio)
       return {
         modo: 'pasado' as const,
         refYear,
         currentYear,
-        subidaPreciosPct,
-        bajaUnidadPct,
       }
     }
+    const ratio = netInRef / netNominal
     const fPrecios = getAccumulatedInflation(currentYear, refYear)
     const subidaPreciosPct = 100 * (fPrecios - 1)
     const subeCifraPct = 100 * (ratio - 1)
@@ -99,7 +94,7 @@ export function PurchasingPowerRefYearExplorer({
   if (grossNominal == null || netNominal == null || netInRef == null || grossInRef == null) {
     return (
       <div
-        className="flex min-w-0 flex-col gap-4 rounded-xl border border-neutral-200/70 bg-neutral-100 p-6 [font-family:var(--font-sans)] sm:gap-5 sm:p-8"
+        className="flex min-w-0 flex-col gap-4 rounded-xl bg-neutral-100 p-6 [font-family:var(--font-sans)] sm:gap-5 sm:p-8"
         role="region"
         aria-labelledby={groupId + '-h'}
       >
@@ -159,7 +154,7 @@ export function PurchasingPowerRefYearExplorer({
       </label>
 
       <div
-        className="border-t border-neutral-200/70 pt-5 sm:pt-6"
+        className="pt-5 sm:pt-6"
         aria-describedby={groupId + '-a'}
       >
         <div
@@ -175,7 +170,7 @@ export function PurchasingPowerRefYearExplorer({
           </div>
           <div className={kCompareBoxClass}>
             <p className="m-0 text-xs font-medium uppercase tracking-wider text-neutral-500 [font-family:var(--font-sans)]">
-              Neto en € {refYear} (constantes, IPC diciembre–diciembre)
+              Tu salario en euros de {refYear}
             </p>
             <div className="mt-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
               <span className="text-2xl font-semibold leading-tight tabular-nums text-neutral-900 sm:text-3xl">
@@ -201,16 +196,9 @@ export function PurchasingPowerRefYearExplorer({
           <p className="m-0 mt-4 text-base leading-relaxed text-neutral-800 [font-family:var(--font-serif)]">
             {resumenPoderAdquisitivo.modo === 'pasado' ? (
               <>
-                Entre {resumenPoderAdquisitivo.refYear} y {resumenPoderAdquisitivo.currentYear} los precios al
-                consumo subieron un{' '}
-                <strong className="font-semibold text-neutral-900">
-                  {formatPct(resumenPoderAdquisitivo.subidaPreciosPct, 1)}
-                </strong>{' '}
-                (IPC diciembre–diciembre, acumulado). Equivale a decir que tu dinero rinde un{' '}
-                <strong className="font-semibold text-neutral-900">
-                  {formatPct(resumenPoderAdquisitivo.bajaUnidadPct, 1)} menos
-                </strong>{' '}
-                que en {resumenPoderAdquisitivo.refYear}: cobras lo mismo, pero vivir cuesta más.
+                Con tu sueldo actual, tienes el mismo poder de compra que alguien que ganaba{' '}
+                <strong className="font-semibold text-neutral-900">{formatEur(netInRef, 0)}</strong> netos en{' '}
+                {resumenPoderAdquisitivo.refYear}.
               </>
             ) : (
               <>

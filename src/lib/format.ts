@@ -72,3 +72,14 @@ export function formatPct(n: number, fractionDigits = 2): string {
     ...groupingEs,
   } as unknown as Intl.NumberFormatOptions).format(n)} %`
 }
+
+/** Porcentaje con signo explícito (+/−) y % pegado al número (p. ej. pills «IPC +3,9%»). */
+export function formatSignedPctCompact(n: number, fractionDigits = 1): string {
+  const body = new Intl.NumberFormat('es-ES', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+    signDisplay: 'exceptZero',
+    ...groupingEs,
+  } as unknown as Intl.NumberFormatOptions).format(n)
+  return `${body}%`
+}
