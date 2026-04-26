@@ -1,15 +1,26 @@
 import { useMemo } from 'react'
 import {
+  brutoNominalAeur2012Comparables,
   computeInflationComparisonRow,
   computePayrollBreakdown,
   INFLATION_COMPARISON_REF_YEAR,
+  netoReexpresadoAeurAñoElegido,
   TAX_YEARS,
 } from '../domain/tax'
-import { CompareBarChart } from '../components/CompareBarChart'
 import { useQuickGross } from '../context/QuickGrossContext'
+import { ComparisonHeadlineValue } from '../components/ComparisonHeadlineValue'
+import { PurchasingPowerRefYearExplorer } from '../components/PurchasingPowerRefYearExplorer'
+import { YearValueTable } from '../components/YearValueTable'
 import { EurAmountInput } from '../components/EurAmountInput'
 import { NetEvolutionChart } from '../components/NetEvolutionChart'
 import { formatEur, formatPct, parseEurInputToNumber } from '../lib/format'
+
+/** Misma caja y espaciado para Poder adquisitivo e IRPF (comparar ejercicios). */
+const kComparisonTableCardClass =
+  'flex min-w-0 flex-col gap-5 rounded-xl border border-neutral-200/70 bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-6'
+const kComparisonTableTitle = 'm-0 min-w-0 flex-1 pr-1 text-lg font-medium leading-snug text-neutral-800 sm:pr-2 sm:text-xl'
+const kComparisonTableHeadline = 'm-0 shrink-0 pl-2 text-right text-lg font-medium leading-snug tabular-nums text-neutral-500 sm:max-w-[48%] sm:pl-3 sm:text-xl'
+const kComparisonTableDesc = 'mb-0 mt-2 text-sm leading-relaxed text-neutral-600 sm:text-base'
 
 export function LandingPage() {
   const { quickGrossInput, setQuickGrossInput, quickCalcYear, calculatorSectionRef } = useQuickGross()
@@ -24,72 +35,95 @@ export function LandingPage() {
     return computePayrollBreakdown(quickGrossAnnual, quickCalcYear).salarioNeto
   }, [quickGrossAnnual, quickCalcYear])
 
-  const netEvolutionPoints = useMemo(() => {
+  /** Mismo “bruto fijo” de la calculadora, homogeneizado a € 2012 para toda la comparación IPC. */
+  const brutoEur2012 = useMemo(() => {
     if (quickGrossAnnual === null) return null
-    return TAX_YEARS.map((year) => {
-      const row = computeInflationComparisonRow(year, quickGrossAnnual)
-      return { year, net: row.netoRealEnSuAnoEur2026 }
-    })
-  }, [quickGrossAnnual])
+    return brutoNominalAeur2012Comparables(quickGrossAnnual, quickCalcYear)
+  }, [quickGrossAnnual, quickCalcYear])
 
-  /** IRPF + cot. trabajador, % sobre el bruto fijado (€ {quickCalcYear} comparables), norma y reexpresión por IPC como en el neto. */
-  const fiscalLoadPoints = useMemo(() => {
-    if (quickGrossAnnual === null) return null
+  const netEvolutionPoints = useMemo(() => {
+    if (brutoEur2012 === null) return null
     return TAX_YEARS.map((year) => {
-      const row = computeInflationComparisonRow(year, quickGrossAnnual)
-      const bruto = row.salarioEquivalente2026
+      const row = computeInflationComparisonRow(year, brutoEur2012)
+      return { year, net: netoReexpresadoAeurAñoElegido(row, quickCalcYear) }
+    })
+  }, [brutoEur2012, quickCalcYear])
+
+  /** IRPF + cot. trabajador, % sobre el bruto fijado (€ 2012 comparables), norma y reexpresión por IPC como en el neto. */
+  const fiscalLoadPoints = useMemo(() => {
+    if (brutoEur2012 === null) return null
+    return TAX_YEARS.map((year) => {
+      const row = computeInflationComparisonRow(year, brutoEur2012)
+      const bruto = row.salarioBrutoEur2012
       if (bruto <= 0) return { year, net: 0 }
-      const pct = (100 * (row.irpfEur2026 + row.ssTraEur2026)) / bruto
+      const pct = (100 * (row.irpfEur2012 + row.ssTraEur2012)) / bruto
       return { year, net: pct }
     })
-  }, [quickGrossAnnual])
+  }, [brutoEur2012])
 
-  /** Diferencia de neto anual frente a aplicar la norma de {INFLATION_COMPARISON_REF_YEAR} al mismo bruto (€ comparables, ver `docs/CALCULOS_FUENTE_DE_VERDAD.md`). */
-  const purchasingPowerPoints = useMemo(() => {
-    if (quickGrossAnnual === null) return null
+  /**
+   * Filas compartidas para tablas: poder adquisitivo, IRPF, y bruto/neto en € del año
+   * de comparación (misma reexpresión).
+   */
+  const comparisonTableRows = useMemo(() => {
+    if (brutoEur2012 === null) return null
     return TAX_YEARS.map((year) => {
-      const row = computeInflationComparisonRow(year, quickGrossAnnual)
-      return { year, net: row.perdidaGananciaAnualPoderAdq }
+      const r = computeInflationComparisonRow(year, brutoEur2012)
+      return {
+        year,
+        poder: r.perdidaGananciaAnualPoderAdq,
+        irpf: r.irpfEur2012,
+        netoEur: r.netoReexpresadoEur2012,
+      }
     })
-  }, [quickGrossAnnual])
+  }, [brutoEur2012])
 
-  /** Retención IRPF por ejercicio reexpresada a euros comparables (misma fila de comparativa). */
-  const irpfComparablePoints = useMemo(() => {
-    if (quickGrossAnnual === null) return null
-    return TAX_YEARS.map((year) => {
-      const row = computeInflationComparisonRow(year, quickGrossAnnual)
-      return { year, net: row.irpfEur2026 }
-    })
-  }, [quickGrossAnnual])
+  /** Cifra del título: diferencia del año de la calculadora frente a 2012 (mismas columnas). */
+  const headlineDiffVs2012 = useMemo(() => {
+    if (comparisonTableRows == null) return null
+    const y2012 = comparisonTableRows.find((r) => r.year === 2012)
+    const yEnd = comparisonTableRows.find((r) => r.year === quickCalcYear)
+    if (y2012 == null || yEnd == null) return null
+    return {
+      poder: yEnd.poder - y2012.poder,
+      irpf: yEnd.irpf - y2012.irpf,
+    }
+  }, [comparisonTableRows, quickCalcYear])
+
+  /** Fila del año de la calculadora: neto (€ 2012) compartido por las leyendas del título y la tabla. */
+  const comparisonRowForCalcYear = useMemo(() => {
+    if (comparisonTableRows == null) return null
+    return comparisonTableRows.find((r) => r.year === quickCalcYear) ?? null
+  }, [comparisonTableRows, quickCalcYear])
 
   /** SS trabajador (€ comparables / año). */
   const workerSsPoints = useMemo(() => {
-    if (quickGrossAnnual === null) return null
+    if (brutoEur2012 === null) return null
     return TAX_YEARS.map((year) => {
-      const row = computeInflationComparisonRow(year, quickGrossAnnual)
-      return { year, net: row.ssTraEur2026 }
+      const row = computeInflationComparisonRow(year, brutoEur2012)
+      return { year, net: row.ssTraEur2012 }
     })
-  }, [quickGrossAnnual])
+  }, [brutoEur2012])
 
-  /** Coste laboral aprox. (€ comparables / año). */
+  /** Coste laboral aprox. (€ 2012 comparables / año). */
   const laborCostPoints = useMemo(() => {
-    if (quickGrossAnnual === null) return null
+    if (brutoEur2012 === null) return null
     return TAX_YEARS.map((year) => {
-      const row = computeInflationComparisonRow(year, quickGrossAnnual)
-      return { year, net: row.costeLaboralEur2026 }
+      const row = computeInflationComparisonRow(year, brutoEur2012)
+      return { year, net: row.costeLaboralEur2012 }
     })
-  }, [quickGrossAnnual])
+  }, [brutoEur2012])
 
-  /** Neto anual / coste laboral (mismos € comparables). */
+  /** Neto anual / coste laboral (mismos € 2012 comparables). */
   const netOverLaborCostPoints = useMemo(() => {
-    if (quickGrossAnnual === null) return null
+    if (brutoEur2012 === null) return null
     return TAX_YEARS.map((year) => {
-      const row = computeInflationComparisonRow(year, quickGrossAnnual)
-      const c = row.costeLaboralEur2026
+      const row = computeInflationComparisonRow(year, brutoEur2012)
+      const c = row.costeLaboralEur2012
       if (c <= 0) return { year, net: 0 }
-      return { year, net: (100 * row.netoRealEnSuAnoEur2026) / c }
+      return { year, net: (100 * row.netoReexpresadoEur2012) / c }
     })
-  }, [quickGrossAnnual])
+  }, [brutoEur2012])
 
   return (
     <div className="space-y-10">
@@ -156,8 +190,8 @@ export function LandingPage() {
                 Evolución del neto
               </p>
               <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
-                Neto de cada ejercicio (norma de ese año) reexpresado a euros {quickCalcYear} con el IPC
-                encadenado.
+                Neto de cada ejercicio (norma de ese año) reexpresado a euros {quickCalcYear} con el IPC: la
+                serie y el neto de arriba comparten unidad, el último punto coincide con la calculadora.
               </p>
             </div>
             <div className="mt-4 flex min-h-0 flex-1 flex-col justify-end">
@@ -173,8 +207,8 @@ export function LandingPage() {
                 Carga fiscal
               </p>
               <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
-                IRPF retenido más cotizaciones del trabajador, en % de tu bruto fijado (€ {quickCalcYear}{' '}
-                comparables, norma de cada ejercicio e IPC).
+                IRPF retenido más cotizaciones del trabajador, en % de tu bruto fijado (€ 2012 comparables,
+                norma de cada ejercicio e IPC).
               </p>
             </div>
             <div className="mt-4 flex min-h-0 flex-1 flex-col justify-end">
@@ -189,6 +223,14 @@ export function LandingPage() {
           </div>
         </div>
 
+        <div className="mt-5 w-full shrink-0 sm:mt-6">
+          <PurchasingPowerRefYearExplorer
+            currentYear={quickCalcYear}
+            grossNominal={quickGrossAnnual}
+            netNominal={quickNetAnnual}
+          />
+        </div>
+
         <div className="h-8 w-full shrink-0 sm:h-10" aria-hidden="true" />
         <div className="w-full shrink-0" aria-label="Más comparativas">
           <h2
@@ -197,58 +239,80 @@ export function LandingPage() {
             Comparar con otros ejercicios
           </h2>
           <p className="mt-2 m-0 max-w-3xl text-base text-neutral-700 [font-family:var(--font-serif)]">
-            Misma lógica que la documentación interna: norma y parámetros de cada año, inflación
-            diciembre–diciembre hasta {quickCalcYear}. Pasa el cursor (línea o barras) para el detalle por
-            año.
+            Misma lógica que la documentación interna: norma y parámetros de cada año; importes en € 2012
+            comparables (IPC diciembre–diciembre). Tabla año a año; el resto de secciones siguen con gráficos.
           </p>
           <div className="mt-6 grid w-full content-start gap-4 md:grid-cols-2">
-            <div className="flex min-h-80 min-w-0 flex-col overflow-visible rounded-xl bg-[var(--color-brand-lavender-soft)]">
-              <div className="px-6 pt-6">
-                <p
-                  className="m-0 text-2xl font-semibold leading-tight tracking-[-0.02em] text-neutral-900 sm:text-3xl"
-                  style={{ fontFamily: 'var(--font-serif)' }}
-                >
-                  Poder adquisitivo
-                </p>
-                <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
-                  Cuánto ganas o pierdes al año, en euros {quickCalcYear} comparables, respecto a lo que
-                  dejaría la norma de {INFLATION_COMPARISON_REF_YEAR} con el mismo bruto. Cero: igual que
-                  hoy; por encima: mejor; por debajo: peor.
+            <div className={kComparisonTableCardClass}>
+              <div>
+                <div className="flex w-full min-w-0 items-start justify-between gap-3 sm:gap-4">
+                  <p className={kComparisonTableTitle}>Poder adquisitivo</p>
+                  {headlineDiffVs2012 != null && brutoEur2012 !== null && comparisonRowForCalcYear != null ? (
+                    <ComparisonHeadlineValue
+                      className={kComparisonTableHeadline}
+                      displayEur={headlineDiffVs2012.poder}
+                      kind="poder"
+                      year={quickCalcYear}
+                      refYear={INFLATION_COMPARISON_REF_YEAR}
+                      delta={headlineDiffVs2012.poder}
+                      netoEur2012={comparisonRowForCalcYear.netoEur}
+                    />
+                  ) : null}
+                </div>
+                <p className={kComparisonTableDesc}>
+                  Cuánto ganas o pierdes al año, en € 2012 comparables, respecto a la norma de{' '}
+                  {INFLATION_COMPARISON_REF_YEAR} con el mismo poder adquisitivo nominal (bruto de{' '}
+                  {quickCalcYear} llevado a esa base).
                 </p>
               </div>
-              <div className="mt-4 flex min-h-0 flex-1 flex-col justify-end">
-                <CompareBarChart
-                  points={purchasingPowerPoints}
-                  className="h-44"
-                  variant="lavender"
-                  formatY={(n) => formatEur(n, 0)}
-                  tooltipSubtitle={`Frente a la norma de ${INFLATION_COMPARISON_REF_YEAR} (mismo bruto, € comparables).`}
-                />
-              </div>
+              <YearValueTable
+                rows={
+                  comparisonTableRows?.map((r) => ({
+                    year: r.year,
+                    value: r.poder,
+                    netoEur: r.netoEur,
+                  })) ?? null
+                }
+                valueColumnLabel="Diferencia"
+                formatValue={(n) => formatEur(n, 0)}
+                comparableYear={INFLATION_COMPARISON_REF_YEAR}
+                legendKind="poder"
+              />
             </div>
-            <div className="flex min-h-80 min-w-0 flex-col overflow-visible rounded-xl bg-[var(--color-brand-mint-soft)]">
-              <div className="px-6 pt-6">
-                <p
-                  className="m-0 text-2xl font-semibold leading-tight tracking-[-0.02em] text-neutral-900 sm:text-3xl"
-                  style={{ fontFamily: 'var(--font-serif)' }}
-                >
-                  IRPF retenido
-                </p>
-                <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
-                  Importe de IRPF de cada ejercicio llevado a euros {quickCalcYear} (IPC), para ver cómo
-                  sube o baja la carga de impuesto aun con el mismo poder adquisitivo nominal.
+            <div className={kComparisonTableCardClass}>
+              <div>
+                <div className="flex w-full min-w-0 items-start justify-between gap-3 sm:gap-4">
+                  <p className={kComparisonTableTitle}>IRPF retenido</p>
+                  {headlineDiffVs2012 != null && brutoEur2012 !== null && comparisonRowForCalcYear != null ? (
+                    <ComparisonHeadlineValue
+                      className={kComparisonTableHeadline}
+                      displayEur={headlineDiffVs2012.irpf}
+                      kind="irpf"
+                      year={quickCalcYear}
+                      refYear={INFLATION_COMPARISON_REF_YEAR}
+                      delta={headlineDiffVs2012.irpf}
+                      netoEur2012={comparisonRowForCalcYear.netoEur}
+                    />
+                  ) : null}
+                </div>
+                <p className={kComparisonTableDesc}>
+                  IRPF retenido de cada norma, en € 2012 comparables (IPC), con el mismo bruto fijo en esa
+                  base; así ves cómo varía el impuesto.
                 </p>
               </div>
-              <div className="mt-4 flex min-h-0 flex-1 flex-col justify-end">
-                <CompareBarChart
-                  points={irpfComparablePoints}
-                  className="h-44"
-                  variant="terracotta"
-                  tooltipBgClassName="bg-[color-mix(in_srgb,var(--color-brand-mint-soft)_50%,var(--color-surface))]"
-                  formatY={(n) => formatEur(n, 0)}
-                  showDeltaVsFirst
-                />
-              </div>
+              <YearValueTable
+                rows={
+                  comparisonTableRows?.map((r) => ({
+                    year: r.year,
+                    value: r.irpf,
+                    netoEur: r.netoEur,
+                  })) ?? null
+                }
+                valueColumnLabel="IRPF (€ c.)"
+                formatValue={(n) => formatEur(n, 0)}
+                comparableYear={INFLATION_COMPARISON_REF_YEAR}
+                legendKind="irpf"
+              />
             </div>
           </div>
         </div>
@@ -274,8 +338,7 @@ export function LandingPage() {
                   Cotización trabajador
                 </p>
                 <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
-                  Cuota de la Seguridad Social (trabajador) de cada norma, en euros {quickCalcYear}{' '}
-                  comparables (IPC).
+                  Cuota de la Seguridad Social (trabajador) de cada norma, en € 2012 comparables (IPC).
                 </p>
               </div>
               <div className="mt-3 flex min-h-0 flex-1 flex-col justify-end px-2 sm:px-3">
@@ -297,7 +360,7 @@ export function LandingPage() {
                   Coste laboral
                 </p>
                 <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
-                  Coste total aproximado (trabajador y empresa) bajo la norma de cada ejercicio, en €
+                  Coste total aproximado (trabajador y empresa) bajo la norma de cada ejercicio, en € 2012
                   comparables.
                 </p>
               </div>
@@ -320,7 +383,7 @@ export function LandingPage() {
                   Neto del coste laboral
                 </p>
                 <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
-                  Porcentaje del coste laboral que acaba en neto (mismos € comparables en numerador y
+                  Porcentaje del coste laboral que acaba en neto (mismos € 2012 comparables en numerador y
                   denominador).
                 </p>
               </div>

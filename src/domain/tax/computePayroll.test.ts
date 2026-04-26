@@ -2,8 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { computePayrollBreakdown, computeBracketQuotas, computeNominaAgregada, round2 } from './computePayroll'
 import { defaultTaxpayerProfile } from './taxpayerProfile'
 import { getYearParameters } from './parameters'
-import { computeInflationComparisonRow } from './compare'
-import { inflationFactorTo2026 } from './inflation'
+import {
+  brutoNominalAeur2012Comparables,
+  computeInflationComparisonRow,
+  netoReexpresadoAeurAñoElegido,
+} from './compare'
+import {
+  getAccumulatedInflation,
+  inflationFactorTo2026,
+  precios2012HastaAnio,
+  reexpressNominalEurAeurConstante,
+} from './inflation'
 
 describe('computeBracketQuotas', () => {
   it('returns zero for non-positive base', () => {
@@ -82,24 +91,50 @@ describe('inflation', () => {
 })
 
 describe('computeInflationComparisonRow', () => {
-  it('same year 2026 yields ~0 purchasing power delta', () => {
-    const row = computeInflationComparisonRow(2026, 50000)
-    expect(row.perdidaGananciaAnualPoderAdq).toBeCloseTo(0, 0)
+  it('misma norma 2012: variación de poder adquisitivo nula con el mismo bruto fijo (€ 2012)', () => {
+    const row = computeInflationComparisonRow(2012, 50000)
+    expect(row.perdidaGananciaAnualPoderAdq).toBe(0)
   })
 
-  it('for 2026, neto en EUR2026 coincide con nómina agregada sin deflactor', () => {
+  it('en 2012, neto reexpresado en € 2012 coincide con nómina agregada', () => {
     const g = 42000
-    const row = computeInflationComparisonRow(2026, g)
-    expect(row.netoRealEnSuAnoEur2026).toBe(computeNominaAgregada(g, 2026).salarioNeto)
+    const row = computeInflationComparisonRow(2012, g)
+    expect(row.netoReexpresadoEur2012).toBe(computeNominaAgregada(g, 2012).salarioNeto)
   })
 
-  it('año histórico: neto reexpresado = redondeo(neto nominal bruto_ajustado × factor IPC a 2026)', () => {
-    const g2026 = 50000
-    const y = 2012
-    const inf = inflationFactorTo2026(y)
-    const brutoNom = g2026 / inf
-    const expected = round2(computeNominaAgregada(brutoNom, y).salarioNeto * inf)
-    expect(computeInflationComparisonRow(y, g2026).netoRealEnSuAnoEur2026).toBe(expected)
+  it('año posterior: neto reexpresado a € 2012 = redondeo(neto nominal / factor precios 2012→año)', () => {
+    const y = 2016 as const
+    const f12y = getAccumulatedInflation(2012, y)
+    const g2012 = 40000
+    const brutoNom = g2012 * f12y
+    const expected = round2(computeNominaAgregada(brutoNom, y).salarioNeto / f12y)
+    expect(computeInflationComparisonRow(y, g2012).netoReexpresadoEur2012).toBe(expected)
+  })
+
+  it('mismo bruto 2026 nominal, fila 2012: coincide con fórmula vía 2026→2012 (equivalente a euros 2012 fijos)', () => {
+    const gNominal2026 = 50000
+    const f1226 = precios2012HastaAnio(2026)
+    const g2012 = gNominal2026 / f1226
+    const row = computeInflationComparisonRow(2026, g2012)
+    const f = getAccumulatedInflation(2012, 2026)
+    const expected = round2(computeNominaAgregada(gNominal2026, 2026).salarioNeto / f)
+    expect(row.netoReexpresadoEur2012).toBe(expected)
+  })
+})
+
+describe('reexpressNominalEurAeurConstante', () => {
+  it('mismo año: no altera el importe', () => {
+    expect(reexpressNominalEurAeurConstante(25_000, 2026, 2026)).toBe(25_000)
+  })
+})
+
+describe('netoReexpresadoAeurAñoElegido (Evolución del neto vs calculadora)', () => {
+  it('el punto del año de la calculadora coincide con el neto de la calculadora (mismo bruto nominal)', () => {
+    const gross = 50_000
+    const y = 2026 as const
+    const b2012 = brutoNominalAeur2012Comparables(gross, y)
+    const row = computeInflationComparisonRow(y, b2012)
+    expect(netoReexpresadoAeurAñoElegido(row, y)).toBe(computePayrollBreakdown(gross, y).salarioNeto)
   })
 })
 

@@ -44,3 +44,35 @@ export function inflationFactorTo2026(year: TaxYear): number {
   _cacheTo2026[year] = v
   return v
 }
+
+const _cache2012aAnio: Partial<Record<TaxYear, number>> = {}
+
+/**
+ * Nivel de precios relativo: P_año / P_2012 (producto 1+IPC de 2013 al año). Para pasar
+ * un importe nominal del año a € constantes 2012: `nominal / precios2012HastaAnio(año)`.
+ */
+export function precios2012HastaAnio(year: TaxYear): number {
+  if (_cache2012aAnio[year] !== undefined) return _cache2012aAnio[year]!
+  const v = getAccumulatedInflation(2012, year)
+  _cache2012aAnio[year] = v
+  return v
+}
+
+/**
+ * Pasa un importe nominal (€ del `anioOrigen`) a € constantes de `anioConstante` (misma cesta, IPC
+ * encadenado diciembre–diciembre). Alinea gráficos con el año de la calculadora, sin tocar el bruto
+ * nominal de nómina.
+ */
+export function reexpressNominalEurAeurConstante(
+  importeNominal: number,
+  anioOrigen: TaxYear,
+  anioConstante: TaxYear
+): number {
+  if (anioOrigen === anioConstante) {
+    return Math.round(importeNominal * 100) / 100
+  }
+  if (anioOrigen < anioConstante) {
+    return Math.round(importeNominal * getAccumulatedInflation(anioOrigen, anioConstante) * 100) / 100
+  }
+  return Math.round((importeNominal / getAccumulatedInflation(anioConstante, anioOrigen)) * 100) / 100
+}

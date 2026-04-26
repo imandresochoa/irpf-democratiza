@@ -92,16 +92,21 @@ export interface PayrollBreakdown {
 
 export interface InflationComparisonRow {
   yearCompared: TaxYear
-  salarioEquivalente2026: number
+  /** Mismo “bruto fijo” en € constantes 2012 (poder adquisitivo) para toda la serie. */
+  salarioBrutoEur2012: number
+  /** P_año / P_2012 (deflactar constantes 2012 → nominal: × este factor). */
   multiplicadorIpc: number
+  /** (P_año / P_2012 − 1) · 100 */
   ipcAcumuladoPercent: number
   salarioBrutoNominal: number
-  costeLaboralEur2026: number
-  ssEmpEur2026: number
-  ssTraEur2026: number
-  irpfEur2026: number
-  netoRealEnSuAnoEur2026: number
-  netoReal2026: number
+  costeLaboralEur2012: number
+  ssEmpEur2012: number
+  ssTraEur2012: number
+  irpfEur2012: number
+  /** Neto bajo la norma del año, reexpresado a € 2012. */
+  netoReexpresadoEur2012: number
+  /** Neto que dejaría la norma de 2012 con el mismo `salarioBrutoEur2012` nominal. */
+  netoReferenciaNorma2012: number
   variacionPoderAdquisitivoMensual: number
   perdidaGananciaAnualPoderAdq: number
 }

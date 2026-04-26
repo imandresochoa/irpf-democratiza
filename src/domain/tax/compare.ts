@@ -1,66 +1,75 @@
 import type { InflationComparisonRow, TaxYear } from './types'
 import { TAX_YEARS } from './types'
-import { inflationFactorTo2026 } from './inflation'
+import { precios2012HastaAnio, reexpressNominalEurAeurConstante } from './inflation'
 import { computeNominaAgregada } from './computePayroll'
 import { round2 } from './computePayroll'
 
-/** Año de norma de referencia para `perdidaGananciaAnualPoderAdq` y `netoReal2026` en la comparativa IPC. */
-export const INFLATION_COMPARISON_REF_YEAR: TaxYear = 2026
+/** Norma fija y moneda de la comparativa IPC (euros 2012: mismo poder adquisitivo nominal). */
+export const INFLATION_COMPARISON_REF_YEAR: TaxYear = 2012
 
 const REF_YEAR = INFLATION_COMPARISON_REF_YEAR
 
 /**
- * Una fila de comparativa: salario nominal del año histórico reexpresado en euros de 2026
- * vs el neto que daría el mismo bruto nominal en 2026.
+ * Convierte un bruto nominal de un ejercicio a la magnitud fija de € constantes 2012
+ * usada en toda la comparativa (misma cesta, distinta norma por año).
+ */
+export function brutoNominalAeur2012Comparables(brutoNominal: number, anio: TaxYear): number {
+  const f = precios2012HastaAnio(anio)
+  return brutoNominal / f
+}
+
+/**
+ * Fila: salario nominal en el año reexpresado a € 2012 vs neto bajo la norma de 2012
+ * con el mismo `salarioBrutoEur2012`.
  */
 export function computeInflationComparisonRow(
   yearCompared: TaxYear,
-  salarioEquivalente2026: number,
+  salarioBrutoEur2012: number,
 ): InflationComparisonRow {
-  const inf = inflationFactorTo2026(yearCompared)
-  const brutoNom = salarioEquivalente2026 / inf
+  const f12y = precios2012HastaAnio(yearCompared)
+  const brutoNom = salarioBrutoEur2012 * f12y
   const nomHist = computeNominaAgregada(brutoNom, yearCompared)
 
-  const cLabAj = round2(nomHist.costeLaboral * inf)
-  const cEmpAj = round2(nomHist.cotEmpresa * inf)
-  const cTraAj = round2(nomHist.cotTrabajador * inf)
-  const irpfAj = round2(nomHist.irpfFinal * inf)
-  const netoAj = round2(nomHist.salarioNeto * inf)
+  const cLabAj = round2(nomHist.costeLaboral / f12y)
+  const cEmpAj = round2(nomHist.cotEmpresa / f12y)
+  const cTraAj = round2(nomHist.cotTrabajador / f12y)
+  const irpfAj = round2(nomHist.irpfFinal / f12y)
+  const netoAj = round2(nomHist.salarioNeto / f12y)
 
-  const ref = computeNominaAgregada(salarioEquivalente2026, REF_YEAR)
-  const neto2026Real = ref.salarioNeto
-  const dif = netoAj - neto2026Real
+  const ref = computeNominaAgregada(salarioBrutoEur2012, REF_YEAR)
+  const netoRef = ref.salarioNeto
+  const dif = netoAj - netoRef
 
   return {
     yearCompared,
-    salarioEquivalente2026,
-    multiplicadorIpc: Math.round(inf * 10000) / 10000,
-    ipcAcumuladoPercent: Math.round((inf - 1) * 10000) / 100,
+    salarioBrutoEur2012,
+    multiplicadorIpc: Math.round(f12y * 10000) / 10000,
+    ipcAcumuladoPercent: Math.round((f12y - 1) * 10000) / 100,
     salarioBrutoNominal: round2(brutoNom),
-    costeLaboralEur2026: cLabAj,
-    ssEmpEur2026: cEmpAj,
-    ssTraEur2026: cTraAj,
-    irpfEur2026: irpfAj,
-    netoRealEnSuAnoEur2026: netoAj,
-    netoReal2026: round2(neto2026Real),
+    costeLaboralEur2012: cLabAj,
+    ssEmpEur2012: cEmpAj,
+    ssTraEur2012: cTraAj,
+    irpfEur2012: irpfAj,
+    netoReexpresadoEur2012: netoAj,
+    netoReferenciaNorma2012: round2(netoRef),
     variacionPoderAdquisitivoMensual: round2(dif / 12),
     perdidaGananciaAnualPoderAdq: round2(dif),
   }
 }
 
 export interface CompareGridOptions {
-  grossMin2026?: number
-  grossMax2026?: number
+  /** Límites en € 2012 comparables. */
+  grossMinEur2012?: number
+  grossMaxEur2012?: number
   step?: number
 }
 
-/** Genera filas bajo demanda (mismo espíritu que generar_comparativa_inflacion) */
 export function computeInflationComparisonForYear(
   yearCompared: TaxYear,
   opts: CompareGridOptions = {},
 ): InflationComparisonRow[] {
-  const grossMin = opts.grossMin2026 ?? 15000
-  const grossMax = opts.grossMax2026 ?? 100000
+  const grossMin = opts.grossMinEur2012 ?? 15000
+  const grossMax = opts.grossMaxEur2012 ?? 100000
   const step = opts.step ?? 1000
   const rows: InflationComparisonRow[] = []
   for (let g = grossMin; g <= grossMax; g += step) {
@@ -69,11 +78,24 @@ export function computeInflationComparisonForYear(
   return rows
 }
 
-/** Tabla completa año × salarios (solo usar con rangos acotados en UI) */
 export function computeFullComparisonGrid(opts: CompareGridOptions = {}): InflationComparisonRow[] {
   const all: InflationComparisonRow[] = []
   for (const y of TAX_YEARS) {
     all.push(...computeInflationComparisonForYear(y, opts))
   }
   return all
+}
+
+/**
+ * Neto nominal bajo `row.yearCompared`, reexpresado a € constantes del año de referencia
+ * (p. ej. el año de la calculadora). Así el punto del último ejercicio coincide con el neto
+ * de `computePayrollBreakdown` del mismo bruto y año, coherente con `docs/CALCULOS_FUENTE_DE_VERDAD.md`
+ * ( serie “Evolución del neto” = misma cesta de moneda que el dato fijado arriba).
+ */
+export function netoReexpresadoAeurAñoElegido(
+  row: InflationComparisonRow,
+  anioConstante: TaxYear
+): number {
+  const nom = computeNominaAgregada(row.salarioBrutoNominal, row.yearCompared).salarioNeto
+  return reexpressNominalEurAeurConstante(nom, row.yearCompared, anioConstante)
 }
