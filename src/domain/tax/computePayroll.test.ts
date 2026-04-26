@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { computePayrollBreakdown, computeBracketQuotas, computeNominaAgregada, round2 } from './computePayroll'
+import { defaultTaxpayerProfile } from './taxpayerProfile'
 import { getYearParameters } from './parameters'
 import { computeInflationComparisonRow } from './compare'
 import { inflationFactorTo2026 } from './inflation'
@@ -56,6 +57,19 @@ describe('computePayrollBreakdown', () => {
     const agg = computeNominaAgregada(gross, year)
     expect(agg.salarioNeto).toBe(full.salarioNeto)
     expect(agg.irpfFinal).toBe(full.irpfFinal)
+  })
+
+  it('perfil con hijos aplica mayor reducción de mínimos y menor IRPF que sin hijos', () => {
+    const gross = 45_000
+    const year = 2024
+    const sin = computePayrollBreakdown(gross, year, defaultTaxpayerProfile)
+    const con = computePayrollBreakdown(gross, year, {
+      ...defaultTaxpayerProfile,
+      hijosMenores25: 2,
+      hijosMenores3: 0,
+    })
+    expect(con.reduccionMinimosLirpf).toBeGreaterThan(sin.reduccionMinimosLirpf)
+    expect(con.irpfFinal).toBeLessThan(sin.irpfFinal)
   })
 })
 

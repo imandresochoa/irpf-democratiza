@@ -1,5 +1,11 @@
 import type { BracketQuotaDetail, PayrollBreakdown, TaxYear, YearTaxParams } from './types'
+import {
+  getPesoEscalaAutonomicaAproximada,
+  tramosAutonomicosAproximados,
+} from './comunidadAutonoma'
+import { getAtepEmpleadorRgl } from './grupoCotizacion'
 import { getYearParameters } from './parameters'
+import { defaultTaxpayerProfile, getReduccionMinimosLirpfBaseImponible, type TaxpayerProfile } from './taxpayerProfile'
 
 export function round2(n: number): number {
   return Math.round(n * 100) / 100
@@ -66,17 +72,24 @@ function applySolidarity(
 }
 
 /**
- * Desglose completo alineado con la lógica del script Python (procesar_ano).
+ * Desglose completo alineado con la lógica del script Python (procesar_ano);
+ * mín. personal y familiar (LIRPF, escala estatal) sobre `profile`.
  */
-export function computePayrollBreakdown(salarioBruto: number, year: TaxYear): PayrollBreakdown {
+export function computePayrollBreakdown(
+  salarioBruto: number,
+  year: TaxYear,
+  profile: TaxpayerProfile = defaultTaxpayerProfile,
+): PayrollBreakdown {
   const p = getYearParameters(year)
   const baseCotizacion = Math.min(salarioBruto, p.baseMax)
   const excesoBase = Math.max(0, salarioBruto - p.baseMax)
 
+  const atepE = getAtepEmpleadorRgl(profile.grupoCotizacion)
+  const ssTiposConAtep = { ...p.ssTipos, atep: [atepE, 0] as [number, number] }
   const tipoEmpresa =
-    Object.values(p.ssTipos).reduce((s, x) => s + x[0], 0) + p.mei[0]
+    Object.values(ssTiposConAtep).reduce((s, x) => s + x[0], 0) + p.mei[0]
   const tipoTrabajador =
-    Object.values(p.ssTipos).reduce((s, x) => s + x[1], 0) + p.mei[1]
+    Object.values(ssTiposConAtep).reduce((s, x) => s + x[1], 0) + p.mei[1]
 
   let cotEmpresa = baseCotizacion * tipoEmpresa
   let cotTrabajador = baseCotizacion * tipoTrabajador
@@ -88,19 +101,36 @@ export function computePayrollBreakdown(salarioBruto: number, year: TaxYear): Pa
   const rendimientoNeto = Math.max(0, rendimientoPrevio - p.gastosFijos)
   const baseImponible = Math.max(0, rendimientoNeto - redTrabajo)
 
-  const { details: cuotasPorTramoRaw, cuotaTotal: cuotaIntegra } = computeBracketQuotas(
+  const { reduccion: reduccionMinimosLirpf } = getReduccionMinimosLirpfBaseImponible(
+    year,
+    profile,
     baseImponible,
+  )
+  const baseSujetaTramos = Math.max(0, baseImponible - reduccionMinimosLirpf)
+
+  const { details: cuotasEstRaw, cuotaTotal: cuotaIntegraEstatal } = computeBracketQuotas(
+    baseSujetaTramos,
     p.tramosIrpf,
   )
-  const cuotaMinimo = p.irpfMinimo * p.tramosIrpf[0]![1]
-  const cuotaTeorica = Math.max(0, cuotaIntegra - cuotaMinimo)
+  const pesoAut = getPesoEscalaAutonomicaAproximada(profile.comunidadAutonoma, year)
+  const trAut = tramosAutonomicosAproximados(p.tramosIrpf, pesoAut)
+  const { details: cuotasAutRaw, cuotaTotal: cuotaIntegraAutonomica } = computeBracketQuotas(
+    baseSujetaTramos,
+    trAut,
+  )
+  const cuotaIntegra = cuotaIntegraEstatal + cuotaIntegraAutonomica
+  const cuotaTeorica = Math.max(0, cuotaIntegra)
   const dedSmi = p.deduccionSmi(salarioBruto)
   const cuotaTrasSmi = Math.max(0, cuotaTeorica - dedSmi)
   const limiteRetencion = Math.max(0, (salarioBruto - p.minimoExento) * 0.43)
   const irpfFinal = Math.min(cuotaTrasSmi, limiteRetencion)
   const salarioNeto = salarioBruto - cotTrabajador - irpfFinal
 
-  const cuotasPorTramo = cuotasPorTramoRaw.map((d) => ({
+  const cuotasPorTramo = cuotasEstRaw.map((d) => ({
+    ...d,
+    amount: round2(d.amount),
+  }))
+  const cuotasPorTramoAutonomica = cuotasAutRaw.map((d) => ({
     ...d,
     amount: round2(d.amount),
   }))
@@ -120,9 +150,13 @@ export function computePayrollBreakdown(salarioBruto: number, year: TaxYear): Pa
     reduccionTrabajo: round2(redTrabajo),
     rendimientoNeto: round2(rendimientoNeto),
     baseImponible: round2(baseImponible),
+    reduccionMinimosLirpf: round2(reduccionMinimosLirpf),
+    baseSujetaTramos: round2(baseSujetaTramos),
     cuotasPorTramo,
+    cuotasPorTramoAutonomica,
+    cuotaIntegraEstatal: round2(cuotaIntegraEstatal),
+    cuotaIntegraAutonomica: round2(cuotaIntegraAutonomica),
     cuotaIntegra: round2(cuotaIntegra),
-    cuotaMinimoPersonal: round2(cuotaMinimo),
     cuotaTeorica: round2(cuotaTeorica),
     deduccionSmi: round2(dedSmi),
     cuotaTrasSmi: round2(cuotaTrasSmi),
@@ -136,6 +170,7 @@ export function computePayrollBreakdown(salarioBruto: number, year: TaxYear): Pa
 export function computeNominaAgregada(
   bruto: number,
   year: TaxYear,
+  profile: TaxpayerProfile = defaultTaxpayerProfile,
 ): {
   costeLaboral: number
   cotEmpresa: number
@@ -143,7 +178,7 @@ export function computeNominaAgregada(
   irpfFinal: number
   salarioNeto: number
 } {
-  const b = computePayrollBreakdown(bruto, year)
+  const b = computePayrollBreakdown(bruto, year, profile)
   return {
     costeLaboral: b.costeLaboral,
     cotEmpresa: b.cotEmpresa,
