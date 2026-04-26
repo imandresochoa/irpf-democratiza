@@ -1,64 +1,64 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuickGross } from '../context/QuickGrossContext'
 import { BrandLogo } from './BrandLogo'
+import { EurAmountInput } from './EurAmountInput'
 import { SiteFooter } from './SiteFooter'
 
-/** La cabecera solo se muestra a partir de este desplazamiento; arriba del todo queda oculta. */
-const REVEAL_HEADER_AFTER_SCROLL_PX = 200
-
 export function AppShell({ children }: { children: ReactNode }) {
-  const [isHeaderVisible, setIsHeaderVisible] = useState(false)
-  const headerRef = useRef<HTMLElement>(null)
-  const frameId = useRef<number | null>(null)
+  const { quickGrossInput, setQuickGrossInput, calculatorSectionRef } = useQuickGross()
+  const [headerBrutoVisible, setHeaderBrutoVisible] = useState(false)
 
-  const updateHeaderVisibility = useCallback(() => {
-    if (frameId.current !== null) {
-      window.cancelAnimationFrame(frameId.current)
+  const updateHeaderBrutoVisibility = useCallback(() => {
+    const el = calculatorSectionRef.current
+    if (el == null) {
+      setHeaderBrutoVisible(false)
+      return
     }
-    frameId.current = window.requestAnimationFrame(() => {
-      frameId.current = null
-      const y = window.scrollY
-      const root = headerRef.current
-      const focusInHeader = root != null && root.contains(document.activeElement)
-      setIsHeaderVisible(y >= REVEAL_HEADER_AFTER_SCROLL_PX || focusInHeader)
-    })
-  }, [])
+    // Toda la tarjeta calculadora quedó por encima del viewport: el usuario ha pasado esa sección.
+    setHeaderBrutoVisible(el.getBoundingClientRect().bottom < 0)
+  }, [calculatorSectionRef])
 
   useEffect(() => {
-    updateHeaderVisibility()
-    window.addEventListener('scroll', updateHeaderVisibility, { passive: true })
-    window.addEventListener('focusin', updateHeaderVisibility)
-    window.addEventListener('focusout', updateHeaderVisibility)
+    updateHeaderBrutoVisibility()
+    window.addEventListener('scroll', updateHeaderBrutoVisibility, { passive: true })
+    window.addEventListener('resize', updateHeaderBrutoVisibility, { passive: true })
     return () => {
-      window.removeEventListener('scroll', updateHeaderVisibility)
-      window.removeEventListener('focusin', updateHeaderVisibility)
-      window.removeEventListener('focusout', updateHeaderVisibility)
-      if (frameId.current !== null) {
-        window.cancelAnimationFrame(frameId.current)
-      }
+      window.removeEventListener('scroll', updateHeaderBrutoVisibility)
+      window.removeEventListener('resize', updateHeaderBrutoVisibility)
     }
-  }, [updateHeaderVisibility])
+  }, [updateHeaderBrutoVisibility])
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header
-        ref={headerRef}
-        className={[
-          'sticky top-0 z-10 border-b border-transparent bg-[var(--color-surface)]/95 backdrop-blur-sm transition-transform duration-200 ease-out motion-reduce:transition-none',
-          isHeaderVisible
-            ? 'translate-y-0 border-b-neutral-200/50 shadow-sm'
-            : 'pointer-events-none -translate-y-full',
-        ].join(' ')}
-        onFocusCapture={updateHeaderVisibility}
-      >
-        <div className="mx-auto flex h-14 max-w-7xl items-center px-4 sm:px-6">
-          <Link
-            to="/"
-            className="pointer-events-auto flex items-center gap-2.5 text-base font-semibold tracking-tight text-neutral-900 no-underline"
-          >
-            <BrandLogo menu className="h-8 w-auto shrink-0" />
-            <span>Comparador de sueldo neto</span>
-          </Link>
+      <header className="sticky top-0 z-10 border-b border-neutral-200/50 bg-[var(--color-surface)]/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-4 sm:px-6">
+          <div className="min-w-0 min-h-0 flex-1">
+            <Link
+              to="/"
+              className="flex min-w-0 items-center gap-2.5 text-base font-semibold tracking-tight text-neutral-900 no-underline"
+            >
+              <BrandLogo menu className="h-8 w-auto shrink-0" />
+              <span className="min-w-0 truncate sm:whitespace-normal">Comparador de sueldo neto</span>
+            </Link>
+          </div>
+          {headerBrutoVisible ? (
+            <div className="flex shrink-0 items-end gap-0.5 sm:items-center">
+              <label
+                htmlFor="header-quick-gross"
+                className="shrink-0 text-sm text-neutral-800 max-sm:sr-only"
+              >
+                Bruto:
+              </label>
+              <EurAmountInput
+                id="header-quick-gross"
+                value={quickGrossInput}
+                onValueChange={setQuickGrossInput}
+                placeholder="35.000,00 €"
+                className="w-28 min-w-0 rounded-lg bg-[var(--color-surface)] px-2 py-1.5 text-sm text-neutral-900 placeholder:text-neutral-700 underline decoration-dashed decoration-2 [text-decoration-color:var(--color-focus)] underline-offset-[0.2em] transition-[text-decoration-color] duration-200 hover:[text-decoration-color:color-mix(in_srgb,var(--color-focus)_48%,var(--color-neutral-400))] focus:no-underline focus-visible:no-underline focus:outline-none focus-visible:outline-none sm:w-40 sm:px-3 sm:py-2 sm:text-base"
+              />
+            </div>
+          ) : null}
         </div>
       </header>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>

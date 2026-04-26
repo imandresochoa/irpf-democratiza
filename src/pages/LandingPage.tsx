@@ -1,19 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import {
   computeInflationComparisonRow,
   computePayrollBreakdown,
-  getCalculatorTaxYear,
   INFLATION_COMPARISON_REF_YEAR,
   TAX_YEARS,
 } from '../domain/tax'
 import { CompareBarChart } from '../components/CompareBarChart'
+import { useQuickGross } from '../context/QuickGrossContext'
 import { EurAmountInput } from '../components/EurAmountInput'
 import { NetEvolutionChart } from '../components/NetEvolutionChart'
 import { formatEur, formatPct, parseEurInputToNumber } from '../lib/format'
 
 export function LandingPage() {
-  const quickCalcYear = getCalculatorTaxYear()
-  const [quickGrossInput, setQuickGrossInput] = useState('15574,85')
+  const { quickGrossInput, setQuickGrossInput, quickCalcYear, calculatorSectionRef } = useQuickGross()
 
   const quickGrossAnnual = useMemo(() => {
     const value = parseEurInputToNumber(quickGrossInput)
@@ -22,8 +21,8 @@ export function LandingPage() {
 
   const quickNetAnnual = useMemo(() => {
     if (quickGrossAnnual === null) return null
-    return computePayrollBreakdown(quickGrossAnnual, getCalculatorTaxYear()).salarioNeto
-  }, [quickGrossAnnual])
+    return computePayrollBreakdown(quickGrossAnnual, quickCalcYear).salarioNeto
+  }, [quickGrossAnnual, quickCalcYear])
 
   const netEvolutionPoints = useMemo(() => {
     if (quickGrossAnnual === null) return null
@@ -119,7 +118,10 @@ export function LandingPage() {
         </div>
         <div className="h-24 w-full shrink-0 sm:h-32" aria-hidden="true" />
         <div className="grid w-full shrink-0 content-start gap-4 md:grid-cols-2 lg:grid-cols-12">
-          <div className="flex flex-col justify-between rounded-xl bg-neutral-100 p-6 lg:col-span-3 lg:min-h-80">
+          <div
+            ref={calculatorSectionRef}
+            className="flex flex-col justify-between rounded-xl bg-neutral-100 p-6 lg:col-span-3 lg:min-h-80"
+          >
             <p
               className="m-0 whitespace-nowrap text-3xl font-semibold leading-none tracking-[-0.025em] text-neutral-900"
               style={{ fontFamily: 'var(--font-serif)' }}
