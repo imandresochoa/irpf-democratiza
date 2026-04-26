@@ -1,90 +1,63 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { BrandLogo } from './BrandLogo'
 
-const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  [
-    'rounded-md px-3 py-2 text-base font-normal transition-colors',
-    isActive
-      ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]'
-      : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900',
-  ].join(' ')
+/** La cabecera solo se muestra a partir de este desplazamiento; arriba del todo queda oculta. */
+const REVEAL_HEADER_AFTER_SCROLL_PX = 200
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true)
-  const lastScrollY = useRef(0)
+  const [isHeaderVisible, setIsHeaderVisible] = useState(false)
+  const headerRef = useRef<HTMLElement>(null)
+  const frameId = useRef<number | null>(null)
+
+  const updateHeaderVisibility = useCallback(() => {
+    if (frameId.current !== null) {
+      window.cancelAnimationFrame(frameId.current)
+    }
+    frameId.current = window.requestAnimationFrame(() => {
+      frameId.current = null
+      const y = window.scrollY
+      const root = headerRef.current
+      const focusInHeader = root != null && root.contains(document.activeElement)
+      setIsHeaderVisible(y >= REVEAL_HEADER_AFTER_SCROLL_PX || focusInHeader)
+    })
+  }, [])
 
   useEffect(() => {
-    const topVisibilityThreshold = 48
-    const scrollDeltaThreshold = 12
-    let frameId: number | null = null
-
-    const updateHeaderVisibility = () => {
-      const currentScrollY = window.scrollY
-      const scrollDelta = currentScrollY - lastScrollY.current
-
-      if (currentScrollY <= topVisibilityThreshold) {
-        setIsHeaderVisible(true)
-        lastScrollY.current = currentScrollY
-        frameId = null
-        return
-      }
-
-      if (Math.abs(scrollDelta) >= scrollDeltaThreshold) {
-        setIsHeaderVisible(scrollDelta < 0)
-        lastScrollY.current = currentScrollY
-      }
-
-      frameId = null
-    }
-
-    const handleScroll = () => {
-      if (frameId !== null) return
-      frameId = window.requestAnimationFrame(updateHeaderVisibility)
-    }
-
-    lastScrollY.current = window.scrollY
-    window.addEventListener('scroll', handleScroll, { passive: true })
-
+    updateHeaderVisibility()
+    window.addEventListener('scroll', updateHeaderVisibility, { passive: true })
+    window.addEventListener('focusin', updateHeaderVisibility)
+    window.addEventListener('focusout', updateHeaderVisibility)
     return () => {
-      window.removeEventListener('scroll', handleScroll)
-      if (frameId !== null) {
-        window.cancelAnimationFrame(frameId)
+      window.removeEventListener('scroll', updateHeaderVisibility)
+      window.removeEventListener('focusin', updateHeaderVisibility)
+      window.removeEventListener('focusout', updateHeaderVisibility)
+      if (frameId.current !== null) {
+        window.cancelAnimationFrame(frameId.current)
       }
     }
-  }, [])
+  }, [updateHeaderVisibility])
 
   return (
     <div className="flex min-h-screen flex-col">
       <header
+        ref={headerRef}
         className={[
-          'sticky top-0 z-10 bg-[var(--color-surface)] transition-transform duration-200 ease-out motion-reduce:transition-none',
-          isHeaderVisible ? 'translate-y-0' : '-translate-y-full',
+          'sticky top-0 z-10 border-b border-transparent bg-[var(--color-surface)]/95 backdrop-blur-sm transition-transform duration-200 ease-out motion-reduce:transition-none',
+          isHeaderVisible
+            ? 'translate-y-0 border-b-neutral-200/50 shadow-sm'
+            : 'pointer-events-none -translate-y-full',
         ].join(' ')}
-        onFocusCapture={() => setIsHeaderVisible(true)}
+        onFocusCapture={updateHeaderVisibility}
       >
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-14 max-w-7xl items-center px-4 sm:px-6">
           <Link
             to="/"
-            className="flex items-center gap-2.5 text-base font-semibold tracking-tight text-neutral-900 no-underline"
+            className="pointer-events-auto flex items-center gap-2.5 text-base font-semibold tracking-tight text-neutral-900 no-underline"
           >
             <BrandLogo menu className="h-8 w-auto shrink-0" />
-            <span>Nómina e IRPF</span>
+            <span>Comparador de sueldo neto</span>
           </Link>
-          <nav className="flex flex-wrap items-center gap-1" aria-label="Principal">
-            <NavLink to="/manual" className={navLinkClass}>
-              Manual
-            </NavLink>
-            <NavLink to="/calcular" className={navLinkClass}>
-              Calcular
-            </NavLink>
-            <NavLink to="/comparar" className={navLinkClass}>
-              Comparar
-            </NavLink>
-            <NavLink to="/normativa" className={navLinkClass}>
-              Normativa
-            </NavLink>
-          </nav>
         </div>
       </header>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
