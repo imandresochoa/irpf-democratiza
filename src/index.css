@@ -50,6 +50,10 @@
   /** Trazo / relleno de gráficos (verde más oscuro que el acento) */
   --color-chart-green-line: rgb(60 100 70);
   --color-chart-green-fill: rgb(98 150 120);
+  /** Terracota: gráficos e fondos (paralelo a verde) */
+  --color-brand-terracotta-soft: rgb(232 200 186);
+  --color-chart-terracotta-line: rgb(120 64 52);
+  --color-chart-terracotta-fill: rgb(188 115 95);
   --color-brand-mint-soft: rgb(235 218 208);
   --color-brand-peach-soft: rgb(214 221 205);
   --color-brand-blue-soft: rgb(239 219 225);

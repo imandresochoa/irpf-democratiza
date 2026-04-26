@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { BrandLogo } from './BrandLogo'
+import { SiteFooter } from './SiteFooter'
 
 /** La cabecera solo se muestra a partir de este desplazamiento; arriba del todo queda oculta. */
 const REVEAL_HEADER_AFTER_SCROLL_PX = 200
@@ -61,22 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
-      <footer className="px-4 py-8 text-center text-xs text-neutral-600 sm:px-6">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-3">
-          <BrandLogo className="h-12 w-auto opacity-95" />
-          <p className="m-0 max-w-md leading-snug">
-            Herramienta educativa. No sustituye asesoramiento fiscal o laboral.
-          </p>
-          <a
-            href="https://x.com/Jongonzlz/status/2047638381501313508"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[var(--color-accent)] underline-offset-2 hover:underline"
-          >
-            Origen del proyecto
-          </a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

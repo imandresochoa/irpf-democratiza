@@ -1,6 +1,6 @@
 import { useCallback, useId, useMemo, useState, type CSSProperties } from 'react'
 import type { TaxYear } from '../domain/tax'
-import { formatEur, formatPct } from '../lib/format'
+import { formatEur, formatEurNumber, formatPct } from '../lib/format'
 
 const VIEW = { w: 100, h: 44 }
 
@@ -47,13 +47,42 @@ function areaPathFromLine(lineD: string): string {
 type NetEvolutionChartProps = {
   points: NetEvolutionPoint[] | null
   className?: string
+  /** Colores del trazo (verde por defecto; terracota para carga fiscal, etc.) */
+  variant?: 'green' | 'terracotta'
+  /** Valor mostrado en el tooltip. Por defecto, neto en €. */
+  formatY?: (n: number) => string
+  /**
+   * Cómo mostrar el delta frente al primer año: retención relativa sobre el neto (comportamiento
+   * original) o puntos de porcentaje (p. p.) para series ya en %.
+   */
+  deltaMode?: 'retention' | 'percentagePoints'
 }
+
+const variantStyles = {
+  green: {
+    fillVar: 'var(--color-chart-green-fill, rgb(98 150 120))',
+    lineVar: 'var(--color-chart-green-line, rgb(60 100 70))',
+    tipBg: 'bg-[color-mix(in_srgb,var(--color-brand-green-soft)_35%,var(--color-surface))]',
+  },
+  terracotta: {
+    fillVar: 'var(--color-chart-terracotta-fill, rgb(188 115 95))',
+    lineVar: 'var(--color-chart-terracotta-line, rgb(120 64 52))',
+    tipBg: 'bg-[color-mix(in_srgb,var(--color-brand-terracotta-soft)_50%,var(--color-surface))]',
+  },
+} as const
 
 /**
  * Línea + área al ras del contenedor (viewBox estirada). Leyenda al pasar el cursor.
  */
-export function NetEvolutionChart({ points, className }: NetEvolutionChartProps) {
+export function NetEvolutionChart({
+  points,
+  className,
+  variant = 'green',
+  formatY = (n) => formatEur(n, 0),
+  deltaMode = 'retention',
+}: NetEvolutionChartProps) {
   const gradId = useId()
+  const colors = variantStyles[variant]
   const [hover, setHover] = useState<{
     index: number
     xPx: number
@@ -111,8 +140,12 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
     hasPoints && hover && layout[hover.index] ? layout[hover.index] : null
   const firstPoint = hasPoints && points ? points[0]! : null
   const pctVsFirst =
-    hp && firstPoint && firstPoint.net !== 0
-      ? ((hp.net - firstPoint.net) / firstPoint.net) * 100
+    hp && firstPoint
+      ? deltaMode === 'percentagePoints'
+        ? hp.net - firstPoint.net
+        : firstPoint.net !== 0
+          ? ((hp.net - firstPoint.net) / firstPoint.net) * 100
+          : null
       : null
 
   const tooltipStyle = useMemo((): CSSProperties | null => {
@@ -161,8 +194,8 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
       >
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-chart-green-fill, rgb(98 150 120))" stopOpacity={0.28} />
-            <stop offset="100%" stopColor="var(--color-chart-green-fill, rgb(98 150 120))" stopOpacity={0.04} />
+            <stop offset="0%" stopColor={colors.fillVar} stopOpacity={0.28} />
+            <stop offset="100%" stopColor={colors.fillVar} stopOpacity={0.04} />
           </linearGradient>
         </defs>
         {areaD ? <path d={areaD} fill={`url(#${gradId})`} /> : null}
@@ -170,7 +203,7 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
           <path
             d={lineD}
             fill="none"
-            stroke="var(--color-chart-green-line, rgb(60 100 70))"
+            stroke={colors.lineVar}
             strokeWidth={0.55}
             vectorEffect="non-scaling-stroke"
             strokeLinejoin="round"
@@ -183,7 +216,7 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
             cy={hp.y}
             r={0.75}
             fill="var(--color-surface, rgb(255 255 255))"
-            stroke="var(--color-chart-green-line, rgb(60 100 70))"
+            stroke={colors.lineVar}
             strokeWidth={0.32}
             vectorEffect="non-scaling-stroke"
             className="pointer-events-none"
@@ -192,19 +225,34 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
       </svg>
       {hp && hover && tooltipStyle ? (
         <div
-          className="pointer-events-none absolute z-10 w-max min-w-0 max-w-[16rem] rounded-xl bg-[color-mix(in_srgb,var(--color-brand-green-soft)_20%,transparent)] px-3 py-2.5 text-left shadow-sm backdrop-blur-md [font-family:var(--font-serif)]"
+          className={[
+            'pointer-events-none absolute z-10 w-max min-w-0 max-w-[16rem] rounded-xl px-3 py-2.5 text-left shadow-sm backdrop-blur-md [font-family:var(--font-serif)]',
+            colors.tipBg,
+          ].join(' ')}
           style={tooltipStyle}
         >
           <p className="m-0 text-base text-neutral-800">{hp.year}</p>
           <p className="m-0 mt-0.5 text-2xl font-semibold leading-none tracking-[-0.03em] text-neutral-900">
-            {formatEur(hp.net, 0)}
+            {formatY(hp.net)}
           </p>
-          {firstPoint && firstPoint.net !== 0 && pctVsFirst !== null && Number.isFinite(pctVsFirst) ? (
+          {firstPoint &&
+          pctVsFirst !== null &&
+          Number.isFinite(pctVsFirst) &&
+          (deltaMode === 'percentagePoints' || firstPoint.net !== 0) ? (
             <p className="m-0 mt-1.5 text-sm leading-snug text-neutral-600">
               <span className="text-neutral-500">Acum. vs {firstPoint.year}</span>{' '}
               <span className="font-medium text-neutral-800">
-                {pctVsFirst > 0 ? '+' : ''}
-                {formatPct(pctVsFirst, 1)}
+                {deltaMode === 'percentagePoints' ? (
+                  <>
+                    {pctVsFirst > 0 ? '+' : ''}
+                    {formatEurNumber(pctVsFirst, 1)} p. p.
+                  </>
+                ) : (
+                  <>
+                    {pctVsFirst > 0 ? '+' : ''}
+                    {formatPct(pctVsFirst, 1)}
+                  </>
+                )}
               </span>
             </p>
           ) : null}

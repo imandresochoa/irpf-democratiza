@@ -7,8 +7,7 @@ import {
 } from '../domain/tax'
 import { EurAmountInput } from '../components/EurAmountInput'
 import { NetEvolutionChart } from '../components/NetEvolutionChart'
-import { formatEur, parseEurInputToNumber } from '../lib/format'
-import heroCharacterImage from '../assets/images/hero-character.svg'
+import { formatEur, formatPct, parseEurInputToNumber } from '../lib/format'
 
 export function LandingPage() {
   const quickCalcYear = getCalculatorTaxYear()
@@ -29,6 +28,18 @@ export function LandingPage() {
     return TAX_YEARS.map((year) => {
       const row = computeInflationComparisonRow(year, quickGrossAnnual)
       return { year, net: row.netoRealEnSuAnoEur2026 }
+    })
+  }, [quickGrossAnnual])
+
+  /** IRPF + cot. trabajador, % sobre el bruto fijado (€ {quickCalcYear} comparables), norma y reexpresión por IPC como en el neto. */
+  const fiscalLoadPoints = useMemo(() => {
+    if (quickGrossAnnual === null) return null
+    return TAX_YEARS.map((year) => {
+      const row = computeInflationComparisonRow(year, quickGrossAnnual)
+      const bruto = row.salarioEquivalente2026
+      if (bruto <= 0) return { year, net: 0 }
+      const pct = (100 * (row.irpfEur2026 + row.ssTraEur2026)) / bruto
+      return { year, net: pct }
     })
   }, [quickGrossAnnual])
 
@@ -102,28 +113,27 @@ export function LandingPage() {
               <NetEvolutionChart points={netEvolutionPoints} className="h-40" />
             </div>
           </div>
-          <div className="relative flex min-h-80 flex-col justify-end overflow-hidden rounded-xl bg-[var(--color-brand-blue-soft)] p-6 text-neutral-900 lg:col-span-5">
-            <img
-              src={heroCharacterImage}
-              alt=""
-              className="pointer-events-none absolute right-4 bottom-0 h-56 w-auto object-contain opacity-90 lg:right-6 lg:h-72"
-              aria-hidden="true"
-            />
-            <div className="relative z-10 flex w-full min-w-0 items-end justify-between gap-x-4 gap-y-2">
+          <div className="flex min-h-80 min-w-0 flex-col overflow-visible rounded-xl bg-[var(--color-brand-terracotta-soft)] lg:col-span-5">
+            <div className="px-6 pt-6">
               <p
-                className="m-0 max-w-[min(100%,18rem)] text-3xl font-semibold leading-[1.05] tracking-[-0.025em] sm:max-w-[20rem]"
+                className="m-0 text-3xl font-semibold leading-none tracking-[-0.025em] text-neutral-900"
                 style={{ fontFamily: 'var(--font-serif)' }}
               >
-                ¿Me ayudas a mejorarlo?
+                Carga fiscal
               </p>
-              <a
-                href="https://x.com/imandresochoa"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 self-end rounded-md px-3 py-2 text-base font-normal text-neutral-800 no-underline [font-family:var(--font-sans)] transition-colors duration-200 hover:bg-neutral-800 hover:text-white"
-              >
-                @imandresochoa
-              </a>
+              <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
+                IRPF retenido más cotizaciones del trabajador, en % de tu bruto fijado (€ {quickCalcYear}{' '}
+                comparables, norma de cada ejercicio e IPC).
+              </p>
+            </div>
+            <div className="mt-4 flex min-h-0 flex-1 flex-col justify-end">
+              <NetEvolutionChart
+                points={fiscalLoadPoints}
+                className="h-40"
+                variant="terracotta"
+                formatY={(n) => formatPct(n, 1)}
+                deltaMode="percentagePoints"
+              />
             </div>
           </div>
         </div>
