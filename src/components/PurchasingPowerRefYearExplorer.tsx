@@ -1,6 +1,7 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import {
   getAccumulatedInflation,
+  INFLATION_COMPARISON_REF_YEAR,
   isTaxYear,
   reexpressNominalEurAeurConstante,
   type TaxYear,
@@ -49,11 +50,7 @@ export function PurchasingPowerRefYearExplorer({
   netNominal,
 }: PurchasingPowerRefYearExplorerProps) {
   const groupId = useId()
-  const [refYear, setRefYear] = useState<TaxYear>(currentYear)
-
-  useEffect(() => {
-    setRefYear(currentYear)
-  }, [currentYear])
+  const [refYear, setRefYear] = useState<TaxYear>(INFLATION_COMPARISON_REF_YEAR)
 
   const netInRef = useMemo(() => {
     if (netNominal == null) return null
@@ -65,15 +62,33 @@ export function PurchasingPowerRefYearExplorer({
     return reexpressNominalEurAeurConstante(grossNominal, currentYear, refYear)
   }, [grossNominal, currentYear, refYear])
 
-  const ipcExplicacion = useMemo(() => {
-    if (refYear === currentYear) return null
+  /** Texto breve: variación del neto al pasar a € constantes + subida/bajada del IPC entre años. */
+  const resumenPoderAdquisitivo = useMemo(() => {
+    if (netNominal == null || netInRef == null || refYear === currentYear) return null
+    const ratio = netInRef / netNominal
     if (refYear < currentYear) {
-      const f = getAccumulatedInflation(refYear, currentYear)
-      return { dir: 'up' as const, factor: f, desde: refYear, hasta: currentYear }
+      const fPrecios = getAccumulatedInflation(refYear, currentYear)
+      const subidaPreciosPct = 100 * (fPrecios - 1)
+      const bajaUnidadPct = 100 * (1 - ratio)
+      return {
+        modo: 'pasado' as const,
+        refYear,
+        currentYear,
+        subidaPreciosPct,
+        bajaUnidadPct,
+      }
     }
-    const f = getAccumulatedInflation(currentYear, refYear)
-    return { dir: 'down' as const, factor: f, desde: currentYear, hasta: refYear }
-  }, [refYear, currentYear])
+    const fPrecios = getAccumulatedInflation(currentYear, refYear)
+    const subidaPreciosPct = 100 * (fPrecios - 1)
+    const subeCifraPct = 100 * (ratio - 1)
+    return {
+      modo: 'futuro' as const,
+      refYear,
+      currentYear,
+      subidaPreciosPct,
+      subeCifraPct,
+    }
+  }, [refYear, currentYear, netNominal, netInRef])
 
   if (grossNominal == null || netNominal == null || netInRef == null || grossInRef == null) {
     return (
@@ -108,8 +123,9 @@ export function PurchasingPowerRefYearExplorer({
         Poder adquisitivo real
       </h2>
       <p className="m-0 text-base leading-relaxed text-neutral-800 [font-family:var(--font-serif)]">
-        Elige un <strong className="font-semibold">año de referencia</strong> para fijar la cesta (IPC): la cifra
-        cambia de unidad, no es un “más o menos” en el calendario.
+        Elige el año con el que quieres medir el <strong className="font-semibold">poder de compra</strong> de tu
+        nómina (IPC al consumo, diciembre a diciembre). La cifra de la derecha es la misma nómina en otra unidad,
+        no otra persona ni otro salario histórico.
       </p>
 
       <label
@@ -141,25 +157,14 @@ export function PurchasingPowerRefYearExplorer({
         aria-describedby={groupId + '-a'}
       >
         <p className="m-0 mb-4 text-sm leading-relaxed text-neutral-600 [font-family:var(--font-serif)]">
-          Las dos cajas usan <strong className="font-medium text-neutral-800">el mismo</strong> sueldo, en dos
-          unidades: no es de izquierda a derecha &quot;peor a mejor en el tiempo&quot;; el año de referencia fija
-          solo con qué cesta mides, no ganas o pierdes al pasar al año {currentYear}.
+          Izquierda: euros de nómina de {currentYear}. Derecha: esos mismos euros leídos con precios cerrados en{' '}
+          {refYear}.
         </p>
         <div
           className="grid min-h-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:items-stretch sm:gap-5"
           role="group"
-          aria-label="Mismo neto: euros constantes de referencia frente a nominal"
+          aria-label="Mismo neto: nómina nominal (año actual) a la izquierda, euros de referencia a la derecha"
         >
-          <div className={kCompareBoxClass}>
-            <p className="m-0 text-xs font-medium uppercase tracking-wider text-neutral-500 [font-family:var(--font-sans)]">
-              Neto en € {refYear} (constantes, IPC diciembre–diciembre)
-            </p>
-            <p className={`${kNetCompareFigureClass} mt-3`}>{formatEur(netInRef, 0)}</p>
-            <p className="m-0 mt-3 text-sm leading-relaxed text-neutral-600 [font-family:var(--font-serif)]">
-              Lo que hoy te pagan, expresado con precios fijados al cierre de {refYear}. Si este número baja, es
-              otro cálculo en otra unidad, no &quot;menos vida en {refYear}&quot; que ahora.
-            </p>
-          </div>
           <div className={kCompareBoxClass}>
             <p className="m-0 text-xs font-medium uppercase tracking-wider text-neutral-500 [font-family:var(--font-sans)]">
               Neto en nómina (nominal) · {currentYear}
@@ -169,36 +174,51 @@ export function PurchasingPowerRefYearExplorer({
               Cifra del mes con la ley e inflación al momento. Es la de la calculadora de arriba.
             </p>
           </div>
+          <div className={kCompareBoxClass}>
+            <p className="m-0 text-xs font-medium uppercase tracking-wider text-neutral-500 [font-family:var(--font-sans)]">
+              Neto en € {refYear} (constantes, IPC diciembre–diciembre)
+            </p>
+            <p className={`${kNetCompareFigureClass} mt-3`}>{formatEur(netInRef, 0)}</p>
+            <p className="m-0 mt-3 text-sm leading-relaxed text-neutral-600 [font-family:var(--font-serif)]">
+              Misma nómina, expresada con la cesta de precios de {refYear} (constantes IPC).
+            </p>
+          </div>
         </div>
         <p className="m-0 mt-4 text-sm leading-relaxed text-neutral-600 [font-family:var(--font-sans)]">
-          Bruto con el mismo ajuste: <span className="font-medium text-neutral-800">{formatEur(grossInRef, 0)}</span>{' '}
-          en € {refYear} (const.) ·{' '}
-          <span className="font-medium text-neutral-800">{formatEur(grossNominal, 0)}</span> nominal.
+          <span className="font-medium text-neutral-800">Bruto anual:</span>{' '}
+          <span className="text-neutral-800">{formatEur(grossNominal, 0)}</span> nominal ·{' '}
+          <span className="text-neutral-800">{formatEur(grossInRef, 0)}</span> en € {refYear} constantes.
         </p>
-        {ipcExplicacion != null ? (
-          <p className="m-0 mt-3 text-sm leading-relaxed text-neutral-500 [font-family:var(--font-serif)]">
-            {ipcExplicacion.dir === 'up' ? (
+        {resumenPoderAdquisitivo != null ? (
+          <p className="m-0 mt-4 text-base leading-relaxed text-neutral-800 [font-family:var(--font-serif)]">
+            {resumenPoderAdquisitivo.modo === 'pasado' ? (
               <>
-                De {ipcExplicacion.desde} a {ipcExplicacion.hasta} el IPC al consumo se multiplica aprox. ×
-                {ipcExplicacion.factor.toFixed(3)}: el neto al pie de hoy, leído con precios fijos en {ipcExplicacion.desde} (caja
-                de la izquierda), baja al pasar a esa unidad, sin decir nada aún de “cómo se vivía entonces” frente
-                a hoy.
+                Entre {resumenPoderAdquisitivo.refYear} y {resumenPoderAdquisitivo.currentYear} los precios al
+                consumo subieron un{' '}
+                <strong className="font-semibold text-neutral-900">
+                  {formatPct(resumenPoderAdquisitivo.subidaPreciosPct, 1)}
+                </strong>{' '}
+                (IPC diciembre–diciembre, acumulado). Equivale a decir que tu dinero rinde un{' '}
+                <strong className="font-semibold text-neutral-900">
+                  {formatPct(resumenPoderAdquisitivo.bajaUnidadPct, 1)} menos
+                </strong>{' '}
+                que en {resumenPoderAdquisitivo.refYear}: cobras lo mismo, pero vivir cuesta más.
               </>
             ) : (
               <>
-                De {ipcExplicacion.desde} a {ipcExplicacion.hasta} los precios suben (×{ipcExplicacion.factor.toFixed(3)}):
-                leer el sueldo en {refYear} sube el número, sin implicar una subida real de poder adquisitivo.
+                Entre {resumenPoderAdquisitivo.currentYear} y {resumenPoderAdquisitivo.refYear} el IPC acumuló un{' '}
+                <strong className="font-semibold text-neutral-900">
+                  {formatPct(resumenPoderAdquisitivo.subidaPreciosPct, 1)}
+                </strong>{' '}
+                de subida en precios al consumo. Por eso tu neto en constantes de {resumenPoderAdquisitivo.refYear}{' '}
+                sale un{' '}
+                <strong className="font-semibold text-neutral-900">
+                  {formatPct(resumenPoderAdquisitivo.subeCifraPct, 1)}
+                </strong>{' '}
+                más alto en papel que el nominal de {resumenPoderAdquisitivo.currentYear}: misma nómina, cesta más
+                cara, otra forma de expresarlo —no significa que hayas ganado poder adquisitivo real.
               </>
             )}
-          </p>
-        ) : null}
-        {refYear !== currentYear ? (
-          <p className="m-0 mt-3 text-sm leading-relaxed text-neutral-500 [font-family:var(--font-serif)]">
-            Con la misma nómina, el neto en € {refYear} supone aprox.{' '}
-            <span className="font-medium text-neutral-700">
-              {formatPct(100 * (netInRef / netNominal), 1)}
-            </span>{' '}
-            del neto de la caja de la derecha, solo al cambiar la moneda fija, no al comparar años reales.
           </p>
         ) : null}
       </div>

@@ -11,7 +11,7 @@ type QuickGrossContextValue = {
 const QuickGrossContext = createContext<QuickGrossContextValue | null>(null)
 
 export function QuickGrossProvider({ children }: { children: ReactNode }) {
-  const [quickGrossInput, setQuickGrossInput] = useState('15574,85')
+  const [quickGrossInput, setQuickGrossInput] = useState('30.000,00')
   const calculatorSectionRef = useRef<HTMLDivElement | null>(null)
   const quickCalcYear = useMemo(() => getCalculatorTaxYear(), [])
 
