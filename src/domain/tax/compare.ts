@@ -4,7 +4,10 @@ import { inflationFactorTo2026 } from './inflation'
 import { computeNominaAgregada } from './computePayroll'
 import { round2 } from './computePayroll'
 
-const REF_YEAR: TaxYear = 2026
+/** Año de norma de referencia para `perdidaGananciaAnualPoderAdq` y `netoReal2026` en la comparativa IPC. */
+export const INFLATION_COMPARISON_REF_YEAR: TaxYear = 2026
+
+const REF_YEAR = INFLATION_COMPARISON_REF_YEAR
 
 /**
  * Una fila de comparativa: salario nominal del año histórico reexpresado en euros de 2026

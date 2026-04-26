@@ -3,8 +3,10 @@ import {
   computeInflationComparisonRow,
   computePayrollBreakdown,
   getCalculatorTaxYear,
+  INFLATION_COMPARISON_REF_YEAR,
   TAX_YEARS,
 } from '../domain/tax'
+import { CompareBarChart } from '../components/CompareBarChart'
 import { EurAmountInput } from '../components/EurAmountInput'
 import { NetEvolutionChart } from '../components/NetEvolutionChart'
 import { formatEur, formatPct, parseEurInputToNumber } from '../lib/format'
@@ -43,6 +45,24 @@ export function LandingPage() {
     })
   }, [quickGrossAnnual])
 
+  /** Diferencia de neto anual frente a aplicar la norma de {INFLATION_COMPARISON_REF_YEAR} al mismo bruto (€ comparables, ver `docs/CALCULOS_FUENTE_DE_VERDAD.md`). */
+  const purchasingPowerPoints = useMemo(() => {
+    if (quickGrossAnnual === null) return null
+    return TAX_YEARS.map((year) => {
+      const row = computeInflationComparisonRow(year, quickGrossAnnual)
+      return { year, net: row.perdidaGananciaAnualPoderAdq }
+    })
+  }, [quickGrossAnnual])
+
+  /** Retención IRPF por ejercicio reexpresada a euros comparables (misma fila de comparativa). */
+  const irpfComparablePoints = useMemo(() => {
+    if (quickGrossAnnual === null) return null
+    return TAX_YEARS.map((year) => {
+      const row = computeInflationComparisonRow(year, quickGrossAnnual)
+      return { year, net: row.irpfEur2026 }
+    })
+  }, [quickGrossAnnual])
+
   return (
     <div className="space-y-10">
       <section
@@ -61,9 +81,10 @@ export function LandingPage() {
             </div>
             <div className="flex w-full min-w-0 flex-col pt-0 lg:col-span-5 lg:pt-0.5">
               <p className="m-0 text-hero-lead [font-family:var(--font-serif)] text-neutral-800">
-                Prueba un bruto anual y ve el neto estimado para el ejercicio en curso. El gráfico muestra
-                cómo habría variado tu neto en años anteriores (misma norma de cada año, reexpresado a
-                euros actuales con el IPC encadenado).
+                Prueba un bruto: comparas de un vistazo el neto y la carga a lo largo de los ejercicios, la
+                diferencia de poder adquisitivo frente a la norma de {INFLATION_COMPARISON_REF_YEAR} y el
+                IRPF a euros comparables. Todo reexpresado con el IPC como en la hoja de cálculo de
+                referencia.
               </p>
             </div>
           </div>
@@ -134,6 +155,69 @@ export function LandingPage() {
                 formatY={(n) => formatPct(n, 1)}
                 deltaMode="percentagePoints"
               />
+            </div>
+          </div>
+        </div>
+
+        <div className="h-8 w-full shrink-0 sm:h-10" aria-hidden="true" />
+        <div className="w-full shrink-0" aria-label="Más comparativas">
+          <h2
+            className="m-0 text-xl font-semibold text-neutral-900 [font-family:var(--font-serif)] sm:text-2xl"
+          >
+            Comparar con otros ejercicios
+          </h2>
+          <p className="mt-2 m-0 max-w-3xl text-base text-neutral-700 [font-family:var(--font-serif)]">
+            Misma lógica que la documentación interna: norma y parámetros de cada año, inflación
+            diciembre–diciembre hasta {quickCalcYear}.             Pasa el cursor (línea o barras) para ver el detalle
+            por año.
+          </p>
+          <div className="mt-6 grid w-full content-start gap-4 md:grid-cols-2">
+            <div className="flex min-h-80 min-w-0 flex-col overflow-visible rounded-xl bg-[var(--color-brand-lavender-soft)]">
+              <div className="px-6 pt-6">
+                <p
+                  className="m-0 text-2xl font-semibold leading-tight tracking-[-0.02em] text-neutral-900 sm:text-3xl"
+                  style={{ fontFamily: 'var(--font-serif)' }}
+                >
+                  Poder adquisitivo
+                </p>
+                <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
+                  Cuánto ganas o pierdes al año, en euros {quickCalcYear} comparables, respecto a lo que
+                  dejaría la norma de {INFLATION_COMPARISON_REF_YEAR} con el mismo bruto. Cero: igual que
+                  hoy; por encima: mejor; por debajo: peor.
+                </p>
+              </div>
+              <div className="mt-4 flex min-h-0 flex-1 flex-col justify-end">
+                <CompareBarChart
+                  points={purchasingPowerPoints}
+                  className="h-44"
+                  variant="lavender"
+                  formatY={(n) => formatEur(n, 0)}
+                  tooltipSubtitle={`Frente a la norma de ${INFLATION_COMPARISON_REF_YEAR} (mismo bruto, € comparables).`}
+                />
+              </div>
+            </div>
+            <div className="flex min-h-80 min-w-0 flex-col overflow-visible rounded-xl bg-[var(--color-brand-mint-soft)]">
+              <div className="px-6 pt-6">
+                <p
+                  className="m-0 text-2xl font-semibold leading-tight tracking-[-0.02em] text-neutral-900 sm:text-3xl"
+                  style={{ fontFamily: 'var(--font-serif)' }}
+                >
+                  IRPF retenido
+                </p>
+                <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
+                  Importe de IRPF de cada ejercicio llevado a euros {quickCalcYear} (IPC), para ver cómo
+                  sube o baja la carga de impuesto aun con el mismo poder adquisitivo nominal.
+                </p>
+              </div>
+              <div className="mt-4 flex min-h-0 flex-1 flex-col justify-end">
+                <CompareBarChart
+                  points={irpfComparablePoints}
+                  className="h-44"
+                  variant="mint"
+                  formatY={(n) => formatEur(n, 0)}
+                  showDeltaVsFirst
+                />
+              </div>
             </div>
           </div>
         </div>

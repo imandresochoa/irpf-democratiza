@@ -47,8 +47,17 @@ function areaPathFromLine(lineD: string): string {
 type NetEvolutionChartProps = {
   points: NetEvolutionPoint[] | null
   className?: string
-  /** Colores del trazo (verde por defecto; terracota para carga fiscal, etc.) */
-  variant?: 'green' | 'terracotta'
+  /** Colores del trazo (verde por defecto; otras para más series en home). */
+  variant?: 'green' | 'terracotta' | 'lavender' | 'mint'
+  /** Muestra la línea de comparación con el primer año (tooltip). */
+  showDeltaInTooltip?: boolean
+  /** Subtítulo bajo el valor principal en el tooltip. */
+  tooltipSubtitle?: string
+  /**
+   * Dibuja una línea horizontal en el valor 0 (útil con cantidades con signo, p. ej. poder
+   * adquisitivo vs norma de referencia).
+   */
+  showZeroLine?: boolean
   /** Valor mostrado en el tooltip. Por defecto, neto en €. */
   formatY?: (n: number) => string
   /**
@@ -69,6 +78,16 @@ const variantStyles = {
     lineVar: 'var(--color-chart-terracotta-line, rgb(120 64 52))',
     tipBg: 'bg-[color-mix(in_srgb,var(--color-brand-terracotta-soft)_50%,var(--color-surface))]',
   },
+  lavender: {
+    fillVar: 'var(--color-chart-lavender-fill, rgb(150 130 180))',
+    lineVar: 'var(--color-chart-lavender-line, rgb(90 70 120))',
+    tipBg: 'bg-[color-mix(in_srgb,var(--color-brand-lavender-soft)_45%,var(--color-surface))]',
+  },
+  mint: {
+    fillVar: 'var(--color-chart-mint-fill, rgb(95 160 150))',
+    lineVar: 'var(--color-chart-mint-line, rgb(50 95 90))',
+    tipBg: 'bg-[color-mix(in_srgb,var(--color-brand-mint-soft)_50%,var(--color-surface))]',
+  },
 } as const
 
 /**
@@ -80,6 +99,9 @@ export function NetEvolutionChart({
   variant = 'green',
   formatY = (n) => formatEur(n, 0),
   deltaMode = 'retention',
+  showDeltaInTooltip = true,
+  tooltipSubtitle,
+  showZeroLine = false,
 }: NetEvolutionChartProps) {
   const gradId = useId()
   const colors = variantStyles[variant]
@@ -91,15 +113,24 @@ export function NetEvolutionChart({
     boxH: number
   } | null>(null)
 
-  const { lineD, areaD, layout } = useMemo(() => {
+  const { lineD, areaD, layout, zeroY } = useMemo(() => {
     if (!points || points.length === 0) {
-      return { lineD: '', areaD: '', layout: [] as { x: number; y: number; year: TaxYear; net: number }[] }
+      return {
+        lineD: '',
+        areaD: '',
+        zeroY: null as number | null,
+        layout: [] as { x: number; y: number; year: TaxYear; net: number }[],
+      }
     }
     const nets = points.map((p) => p.net)
     const minN = Math.min(...nets)
     const maxN = Math.max(...nets)
     const padN = 0.1
     const n = points.length
+    const zy =
+      showZeroLine && minN < 0 && maxN > 0
+        ? yForValue(0, minN, maxN, padN)
+        : null
     const layout = points.map((p, i) => {
       const x = n === 1 ? 50 : (i / (n - 1)) * 100
       return {
@@ -113,11 +144,11 @@ export function NetEvolutionChart({
       const p = layout[0]
       const lineD0 = `M ${p.x} ${p.y}`
       const areaD0 = `M 0 ${VIEW.h} L ${p.x} ${p.y} L 100 ${VIEW.h} Z`
-      return { lineD: lineD0, areaD: areaD0, layout }
+      return { lineD: lineD0, areaD: areaD0, zeroY: zy, layout }
     }
     const lineD0 = smoothPathLine(layout)
-    return { lineD: lineD0, areaD: areaPathFromLine(lineD0), layout }
-  }, [points])
+    return { lineD: lineD0, areaD: areaPathFromLine(lineD0), zeroY: zy, layout }
+  }, [points, showZeroLine])
 
   const onMove = useCallback(
     (clientX: number, clientY: number, currentTarget: HTMLDivElement) => {
@@ -199,6 +230,19 @@ export function NetEvolutionChart({
           </linearGradient>
         </defs>
         {areaD ? <path d={areaD} fill={`url(#${gradId})`} /> : null}
+        {zeroY !== null ? (
+          <line
+            x1={0}
+            y1={zeroY}
+            x2={VIEW.w}
+            y2={zeroY}
+            stroke="var(--color-neutral-400, rgb(148 146 142))"
+            strokeWidth={0.25}
+            strokeOpacity={0.7}
+            vectorEffect="non-scaling-stroke"
+            strokeDasharray="1.2 0.8"
+          />
+        ) : null}
         {lineD ? (
           <path
             d={lineD}
@@ -235,7 +279,11 @@ export function NetEvolutionChart({
           <p className="m-0 mt-0.5 text-2xl font-semibold leading-none tracking-[-0.03em] text-neutral-900">
             {formatY(hp.net)}
           </p>
-          {firstPoint &&
+          {tooltipSubtitle ? (
+            <p className="m-0 mt-1.5 text-sm leading-snug text-neutral-600">{tooltipSubtitle}</p>
+          ) : null}
+          {showDeltaInTooltip &&
+          firstPoint &&
           pctVsFirst !== null &&
           Number.isFinite(pctVsFirst) &&
           (deltaMode === 'percentagePoints' || firstPoint.net !== 0) ? (
