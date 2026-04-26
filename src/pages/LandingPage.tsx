@@ -313,7 +313,8 @@ export function LandingPage() {
                 de {quickCalcYear} (el que has escrito) en todas las filas; en cada año se aplica la norma fiscal
                 de ese ejercicio. Cotizaciones, IRPF, neto y coste total son{' '}
                 <strong className="font-semibold text-neutral-800">importes nominales</strong> de ese año, como
-                en una nómina de ese periodo (sin reexpresar con el IPC entre ejercicios).
+                en una nómina de ese periodo (sin reexpresar con el IPC entre ejercicios). Se muestran dos recibos
+                (2026 y un año que eliges), con el orden bruto → retenciones → indicadores → neto anual.
               </p>
             </div>
             <PayrollYearComparisonTable rows={payrollComparisonRows} grossNominalYear={quickCalcYear} />
