@@ -63,6 +63,35 @@ export function LandingPage() {
     })
   }, [quickGrossAnnual])
 
+  /** SS trabajador (€ comparables / año). */
+  const workerSsPoints = useMemo(() => {
+    if (quickGrossAnnual === null) return null
+    return TAX_YEARS.map((year) => {
+      const row = computeInflationComparisonRow(year, quickGrossAnnual)
+      return { year, net: row.ssTraEur2026 }
+    })
+  }, [quickGrossAnnual])
+
+  /** Coste laboral aprox. (€ comparables / año). */
+  const laborCostPoints = useMemo(() => {
+    if (quickGrossAnnual === null) return null
+    return TAX_YEARS.map((year) => {
+      const row = computeInflationComparisonRow(year, quickGrossAnnual)
+      return { year, net: row.costeLaboralEur2026 }
+    })
+  }, [quickGrossAnnual])
+
+  /** Neto anual / coste laboral (mismos € comparables). */
+  const netOverLaborCostPoints = useMemo(() => {
+    if (quickGrossAnnual === null) return null
+    return TAX_YEARS.map((year) => {
+      const row = computeInflationComparisonRow(year, quickGrossAnnual)
+      const c = row.costeLaboralEur2026
+      if (c <= 0) return { year, net: 0 }
+      return { year, net: (100 * row.netoRealEnSuAnoEur2026) / c }
+    })
+  }, [quickGrossAnnual])
+
   return (
     <div className="space-y-10">
       <section
@@ -81,10 +110,9 @@ export function LandingPage() {
             </div>
             <div className="flex w-full min-w-0 flex-col pt-0 lg:col-span-5 lg:pt-0.5">
               <p className="m-0 text-hero-lead [font-family:var(--font-serif)] text-neutral-800">
-                Prueba un bruto: comparas de un vistazo el neto y la carga a lo largo de los ejercicios, la
-                diferencia de poder adquisitivo frente a la norma de {INFLATION_COMPARISON_REF_YEAR} y el
-                IRPF a euros comparables. Todo reexpresado con el IPC como en la hoja de cálculo de
-                referencia.
+                Prueba un bruto: neto, carga, poder adquisitivo, IRPF, cotizaciones, coste laboral y qué
+                parte del coste se queda en neto — todo con el IPC y la norma de cada año, como en la
+                hoja de cálculo de referencia.
               </p>
             </div>
           </div>
@@ -168,8 +196,8 @@ export function LandingPage() {
           </h2>
           <p className="mt-2 m-0 max-w-3xl text-base text-neutral-700 [font-family:var(--font-serif)]">
             Misma lógica que la documentación interna: norma y parámetros de cada año, inflación
-            diciembre–diciembre hasta {quickCalcYear}.             Pasa el cursor (línea o barras) para ver el detalle
-            por año.
+            diciembre–diciembre hasta {quickCalcYear}. Pasa el cursor (línea o barras) para el detalle por
+            año.
           </p>
           <div className="mt-6 grid w-full content-start gap-4 md:grid-cols-2">
             <div className="flex min-h-80 min-w-0 flex-col overflow-visible rounded-xl bg-[var(--color-brand-lavender-soft)]">
@@ -216,6 +244,91 @@ export function LandingPage() {
                   variant="mint"
                   formatY={(n) => formatEur(n, 0)}
                   showDeltaVsFirst
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-8 w-full shrink-0 sm:h-10" aria-hidden="true" />
+        <div className="w-full shrink-0" aria-label="Cotizaciones y coste laboral">
+          <h2
+            className="m-0 text-xl font-semibold text-neutral-900 [font-family:var(--font-serif)] sm:text-2xl"
+          >
+            Cotizaciones, coste y reparto
+          </h2>
+          <p className="mt-2 m-0 max-w-3xl text-base text-neutral-700 [font-family:var(--font-serif)]">
+            Mismas filas de comparativa: cotización del trabajador, coste laboral aproximado (empresa y
+            trabajador) y qué porcentaje del coste se traduce en neto.
+          </p>
+          <div className="mt-6 grid w-full content-start gap-4 lg:grid-cols-3">
+            <div className="flex min-h-72 min-w-0 flex-col overflow-visible rounded-xl bg-[var(--color-brand-blue-soft)]">
+              <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+                <p
+                  className="m-0 text-2xl font-semibold leading-tight tracking-[-0.02em] text-neutral-900"
+                  style={{ fontFamily: 'var(--font-serif)' }}
+                >
+                  Cotización trabajador
+                </p>
+                <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
+                  Cuota de la Seguridad Social (trabajador) de cada norma, en euros {quickCalcYear}{' '}
+                  comparables (IPC).
+                </p>
+              </div>
+              <div className="mt-3 flex min-h-0 flex-1 flex-col justify-end px-2 sm:px-3">
+                <NetEvolutionChart
+                  points={workerSsPoints}
+                  className="h-40"
+                  variant="pink"
+                  tooltipBgClassName="bg-[color-mix(in_srgb,var(--color-brand-blue-soft)_50%,var(--color-surface))]"
+                  formatY={(n) => formatEur(n, 0)}
+                />
+              </div>
+            </div>
+            <div className="flex min-h-72 min-w-0 flex-col overflow-visible rounded-xl bg-[var(--color-brand-pink-soft)]">
+              <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+                <p
+                  className="m-0 text-2xl font-semibold leading-tight tracking-[-0.02em] text-neutral-900"
+                  style={{ fontFamily: 'var(--font-serif)' }}
+                >
+                  Coste laboral
+                </p>
+                <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
+                  Coste total aproximado (trabajador y empresa) bajo la norma de cada ejercicio, en €
+                  comparables.
+                </p>
+              </div>
+              <div className="mt-3 flex min-h-0 flex-1 flex-col justify-end px-2 sm:px-3">
+                <NetEvolutionChart
+                  points={laborCostPoints}
+                  className="h-40"
+                  variant="blue"
+                  tooltipBgClassName="bg-[color-mix(in_srgb,var(--color-brand-pink-soft)_50%,var(--color-surface))]"
+                  formatY={(n) => formatEur(n, 0)}
+                />
+              </div>
+            </div>
+            <div className="flex min-h-72 min-w-0 flex-col overflow-visible rounded-xl bg-[var(--color-brand-peach-soft)]">
+              <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+                <p
+                  className="m-0 text-2xl font-semibold leading-tight tracking-[-0.02em] text-neutral-900"
+                  style={{ fontFamily: 'var(--font-serif)' }}
+                >
+                  Neto del coste laboral
+                </p>
+                <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
+                  Porcentaje del coste laboral que acaba en neto (mismos € comparables en numerador y
+                  denominador).
+                </p>
+              </div>
+              <div className="mt-3 flex min-h-0 flex-1 flex-col justify-end px-2 sm:px-3">
+                <NetEvolutionChart
+                  points={netOverLaborCostPoints}
+                  className="h-40"
+                  variant="mint"
+                  tooltipBgClassName="bg-[color-mix(in_srgb,var(--color-brand-peach-soft)_50%,var(--color-surface))]"
+                  formatY={(n) => formatPct(n, 1)}
+                  deltaMode="percentagePoints"
                 />
               </div>
             </div>

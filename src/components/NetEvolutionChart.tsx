@@ -48,7 +48,13 @@ type NetEvolutionChartProps = {
   points: NetEvolutionPoint[] | null
   className?: string
   /** Colores del trazo (verde por defecto; otras para más series en home). */
-  variant?: 'green' | 'terracotta' | 'lavender' | 'mint'
+  variant?: 'green' | 'terracotta' | 'lavender' | 'mint' | 'blue' | 'pink' | 'peach'
+  /**
+   * Sustituye el fondo del tooltip (por defecto se deriva de `variant`). Úsalo cuando el trazo
+   * coincida con un `variant` distinto del fondo de la tarjeta (p. ej. tono rosa en la gráfica
+   * y `--color-brand-blue-soft` en el contenedor).
+   */
+  tooltipBgClassName?: string
   /** Muestra la línea de comparación con el primer año (tooltip). */
   showDeltaInTooltip?: boolean
   /** Subtítulo bajo el valor principal en el tooltip. */
@@ -88,6 +94,21 @@ const variantStyles = {
     lineVar: 'var(--color-chart-mint-line, rgb(50 95 90))',
     tipBg: 'bg-[color-mix(in_srgb,var(--color-brand-mint-soft)_50%,var(--color-surface))]',
   },
+  blue: {
+    fillVar: 'var(--color-chart-blue-fill, rgb(110 150 200))',
+    lineVar: 'var(--color-chart-blue-line, rgb(50 80 120))',
+    tipBg: 'bg-[color-mix(in_srgb,var(--color-brand-blue-soft)_50%,var(--color-surface))]',
+  },
+  pink: {
+    fillVar: 'var(--color-chart-pink-fill, rgb(200 120 150))',
+    lineVar: 'var(--color-chart-pink-line, rgb(110 55 75))',
+    tipBg: 'bg-[color-mix(in_srgb,var(--color-brand-pink-soft)_50%,var(--color-surface))]',
+  },
+  peach: {
+    fillVar: 'var(--color-chart-peach-fill, rgb(200 130 100))',
+    lineVar: 'var(--color-chart-peach-line, rgb(120 70 50))',
+    tipBg: 'bg-[color-mix(in_srgb,var(--color-brand-peach-soft)_50%,var(--color-surface))]',
+  },
 } as const
 
 /**
@@ -100,11 +121,13 @@ export function NetEvolutionChart({
   formatY = (n) => formatEur(n, 0),
   deltaMode = 'retention',
   showDeltaInTooltip = true,
+  tooltipBgClassName,
   tooltipSubtitle,
   showZeroLine = false,
 }: NetEvolutionChartProps) {
   const gradId = useId()
   const colors = variantStyles[variant]
+  const tipBg = tooltipBgClassName ?? colors.tipBg
   const [hover, setHover] = useState<{
     index: number
     xPx: number
@@ -271,7 +294,7 @@ export function NetEvolutionChart({
         <div
           className={[
             'pointer-events-none absolute z-10 w-max min-w-0 max-w-[16rem] rounded-xl px-3 py-2.5 text-left shadow-sm backdrop-blur-md [font-family:var(--font-serif)]',
-            colors.tipBg,
+            tipBg,
           ].join(' ')}
           style={tooltipStyle}
         >
