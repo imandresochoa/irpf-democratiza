@@ -12,8 +12,8 @@ export type PayrollYearComparisonRow = {
 
 type PayrollYearComparisonTableProps = {
   rows: PayrollYearComparisonRow[] | null
-  /** Año de referencia de moneda (reexpresión IPC). */
-  refYear: TaxYear
+  /** Año en el que interpretas el bruto nominal introducido (texto accesible). */
+  grossNominalYear: TaxYear
   emptyMessage?: string
 }
 
@@ -29,11 +29,11 @@ const tdNum = `${padX} ${padYBody} text-right text-sm tabular-nums text-neutral-
 
 /**
  * Evolución anual en clave nómina: bruto, neto, retenciones y coste total.
- * Importes en euros del año `refYear` (IPC diciembre–diciembre).
+ * Mismo bruto nominal en euros de `grossNominalYear`; el resto son nominales del ejercicio de cada fila.
  */
 export function PayrollYearComparisonTable({
   rows,
-  refYear,
+  grossNominalYear,
   emptyMessage = 'Añade un bruto anual',
 }: PayrollYearComparisonTableProps) {
   if (rows == null || rows.length === 0) {
@@ -51,8 +51,8 @@ export function PayrollYearComparisonTable({
     <div className="-mx-1 min-w-0 overflow-x-auto px-1 sm:mx-0 sm:px-0">
       <table className="w-full table-fixed border-separate border-spacing-0 text-left [font-family:var(--font-sans)]">
         <caption className="sr-only">
-          Por ejercicio: bruto, neto, cotización del trabajador, IRPF y coste laboral aproximado; euros de{' '}
-          {refYear}.
+          Mismo bruto nominal en euros de {grossNominalYear} en todas las filas; por ejercicio: neto, cotización
+          del trabajador, IRPF y coste laboral aproximado, todos como importes nominales de ese año.
         </caption>
         <colgroup>
           <col className="w-[4.25rem] sm:w-20" />

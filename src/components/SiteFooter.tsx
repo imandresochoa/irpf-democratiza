@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import heroCharacterImage from '../assets/images/hero-character.svg'
 
 const footTextClass = 'text-base text-neutral-600 [font-family:var(--font-sans)]'
@@ -22,6 +23,9 @@ export function SiteFooter() {
               </h2>
               <div className="flex w-full min-w-0 max-w-md flex-col gap-2 self-start">
                 <nav className="flex flex-col gap-2" aria-label="Contacto e información">
+                  <Link to="/calculos" className={footLinkClass}>
+                    Cálculos y fórmulas
+                  </Link>
                   <a
                     href="https://x.com/imandresochoa"
                     target="_blank"

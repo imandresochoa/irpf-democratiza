@@ -4,17 +4,14 @@ import {
   computeInflationComparisonRow,
   computeNominaAgregada,
   computePayrollBreakdown,
-  INFLATION_COMPARISON_REF_YEAR,
   IPC_ANUAL_DIC,
   netoReexpresadoAeurAñoElegido,
   precios2012HastaAnio,
-  reexpressNominalEurAeurConstante,
   round2,
   TAX_YEARS,
   type TaxYear,
 } from '../domain/tax'
 import { useQuickGross } from '../context/QuickGrossContext'
-import { ComparisonHeadlineValue } from '../components/ComparisonHeadlineValue'
 import { PurchasingPowerRefYearExplorer } from '../components/PurchasingPowerRefYearExplorer'
 import { PayrollYearComparisonTable } from '../components/PayrollYearComparisonTable'
 import { EurAmountInput } from '../components/EurAmountInput'
@@ -25,7 +22,6 @@ import { formatEur, formatPct, parseEurInputToNumber } from '../lib/format'
 /** Caja de la tabla única año a año (nómina / coste). */
 const kComparisonTableCardClass =
   'flex min-w-0 flex-col gap-5 rounded-xl border border-neutral-200/70 bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-6'
-const kComparisonTableHeadline = 'm-0 shrink-0 pl-2 text-right text-lg font-medium leading-snug tabular-nums text-neutral-500 sm:max-w-[48%] sm:pl-3 sm:text-xl'
 
 export function LandingPage() {
   const { quickGrossInput, setQuickGrossInput, quickCalcYear, calculatorSectionRef } = useQuickGross()
@@ -67,39 +63,24 @@ export function LandingPage() {
   }, [brutoEur2012])
 
   /**
-   * Tabla única: desglose tipo nómina por ejercicio; importes reexpresados a euros del año de la calculadora.
+   * Tabla nómina: mismo bruto nominal (el de la calculadora) y norma de cada ejercicio; importes nominales
+   * de ese año, sin reexpresión por IPC.
    */
   const payrollComparisonRows = useMemo(() => {
-    if (brutoEur2012 === null) return null
-    const refY = quickCalcYear
+    if (quickGrossAnnual === null) return null
+    const g = quickGrossAnnual
     return TAX_YEARS.map((year) => {
-      const infl = computeInflationComparisonRow(year, brutoEur2012)
-      const bd = computePayrollBreakdown(infl.salarioBrutoNominal, year)
-      const rex = (x: number) => reexpressNominalEurAeurConstante(x, year, refY)
-      const bruto = rex(bd.salarioBruto)
-      const cotTrabajador = rex(bd.cotTrabajador)
-      const irpf = rex(bd.irpfFinal)
-      const neto = rex(bd.salarioNeto)
-      const costeLaboral = rex(bd.costeLaboral)
+      const bd = computePayrollBreakdown(g, year)
       return {
         year,
-        bruto,
-        cotTrabajador,
-        irpf,
-        neto,
-        costeLaboral,
+        bruto: bd.salarioBruto,
+        cotTrabajador: bd.cotTrabajador,
+        irpf: bd.irpfFinal,
+        neto: bd.salarioNeto,
+        costeLaboral: bd.costeLaboral,
       }
     })
-  }, [brutoEur2012, quickCalcYear])
-
-  /** IRPF del año de la calculadora menos IRPF de 2012 (€ 2012 comparables), en euros del año de la calculadora. */
-  const irpfHeadlineDiffReexpressedToCalcYear = useMemo(() => {
-    if (brutoEur2012 === null) return null
-    const r2012 = computeInflationComparisonRow(2012, brutoEur2012)
-    const rEnd = computeInflationComparisonRow(quickCalcYear, brutoEur2012)
-    const m = precios2012HastaAnio(quickCalcYear)
-    return (rEnd.irpfEur2012 - r2012.irpfEur2012) * m
-  }, [brutoEur2012, quickCalcYear])
+  }, [quickGrossAnnual])
 
   /**
    * Gráfico comparado: IPC acumulado; neto e IRPF con el **mismo bruto nominal** en cada
@@ -185,8 +166,6 @@ export function LandingPage() {
     }
     return out
   }, [quickGrossAnnual, quickCalcYear])
-
-  const legendAmountContext = `euros ${quickCalcYear} (IPC)`
 
   return (
     <div className="space-y-10">
@@ -323,36 +302,21 @@ export function LandingPage() {
         <div className="h-8 w-full shrink-0 sm:h-10" aria-hidden="true" />
         <div className="w-full shrink-0" aria-label="Nómina y coste por ejercicio">
           <div className={kComparisonTableCardClass}>
-            <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0 flex-1">
-                <h2
-                  className="m-0 text-xl font-semibold text-neutral-900 [font-family:var(--font-serif)] sm:text-2xl"
-                >
-                  Nómina año a año
-                </h2>
-                <p className="mt-2 m-0 max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
-                  Norma de cada año y el mismo poder adquisitivo que tu bruto de {quickCalcYear}; cifras en euros
-                  de {quickCalcYear} (IPC diciembre–diciembre). «Coste total» es bruto más cotización empresa
-                  (aprox.).
-                </p>
-              </div>
-              {irpfHeadlineDiffReexpressedToCalcYear != null && quickNetAnnual != null ? (
-                <div className="flex shrink-0 flex-col items-stretch sm:items-end">
-                  <ComparisonHeadlineValue
-                    className={kComparisonTableHeadline + ' text-left sm:text-right'}
-                    displayEur={irpfHeadlineDiffReexpressedToCalcYear}
-                    kind="irpf"
-                    year={quickCalcYear}
-                    refYear={INFLATION_COMPARISON_REF_YEAR}
-                    delta={irpfHeadlineDiffReexpressedToCalcYear}
-                    netoDisplayEur={quickNetAnnual}
-                    netoCaptionYear={quickCalcYear}
-                    legendAmountContext={legendAmountContext}
-                  />
-                </div>
-              ) : null}
+            <div className="min-w-0">
+              <h2
+                className="m-0 text-xl font-semibold text-neutral-900 [font-family:var(--font-serif)] sm:text-2xl"
+              >
+                Nómina año a año
+              </h2>
+              <p className="mt-2 m-0 max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
+                Mismo <strong className="font-semibold text-neutral-800">bruto anual nominal</strong> en euros
+                de {quickCalcYear} (el que has escrito) en todas las filas; en cada año se aplica la norma fiscal
+                de ese ejercicio. Cotizaciones, IRPF, neto y coste total son{' '}
+                <strong className="font-semibold text-neutral-800">importes nominales</strong> de ese año, como
+                en una nómina de ese periodo (sin reexpresar con el IPC entre ejercicios).
+              </p>
             </div>
-            <PayrollYearComparisonTable rows={payrollComparisonRows} refYear={quickCalcYear} />
+            <PayrollYearComparisonTable rows={payrollComparisonRows} grossNominalYear={quickCalcYear} />
           </div>
         </div>
       </section>
