@@ -13,23 +13,25 @@ export function comparisonLegendMainCopy(
   year: TaxYear,
   refYear: TaxYear,
   deltaEur: number,
+  /** Texto final entre paréntesis, p. ej. "euros 2026 (IPC)" o "€ comparables". */
+  amountContext: string = '€ comparables',
 ): string {
   const y = String(refYear)
   if (Math.abs(deltaEur) < 0.5) {
     if (kind === 'poder') {
-      return `En ${year}, con el mismo bruto, el poder adquisitivo anual (€ comparables) es el mismo que en ${y}.`
+      return `En ${year}, con el mismo bruto, el poder adquisitivo anual (${amountContext}) es el mismo que en ${y}.`
     }
-    return `En ${year}, el IRPF anual retenido (€ comparables) es el mismo que en ${y}.`
+    return `En ${year}, el IRPF anual retenido (${amountContext}) es el mismo que en ${y}.`
   }
   const abs = formatEur(Math.abs(deltaEur), 0)
   if (kind === 'poder') {
     if (deltaEur < 0) {
-      return `En ${year} has perdido ${abs} de poder adquisitivo al año con respecto a ${y}.`
+      return `En ${year} has perdido ${abs} de poder adquisitivo al año con respecto a ${y} (${amountContext}).`
     }
-    return `En ${year} has ganado ${abs} de poder adquisitivo al año con respecto a ${y}.`
+    return `En ${year} has ganado ${abs} de poder adquisitivo al año con respecto a ${y} (${amountContext}).`
   }
   if (deltaEur > 0) {
-    return `En ${year} pagas ${abs} más al año de IRPF con respecto a ${y} (€ comparables).`
+    return `En ${year} pagas ${abs} más al año de IRPF con respecto a ${y} (${amountContext}).`
   }
-  return `En ${year} pagas ${abs} menos al año de IRPF con respecto a ${y} (€ comparables).`
+  return `En ${year} pagas ${abs} menos al año de IRPF con respecto a ${y} (${amountContext}).`
 }

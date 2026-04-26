@@ -12,12 +12,16 @@ type ComparisonHeadlineValueProps = {
   refYear: TaxYear
   /** Misma magnitud que el texto: delta respecto a 2012 (año de la calculadora). */
   delta: number
-  /** Neto reexpresado a € 2012 del año de la calculadora (línea inferior de la leyenda, como en la tabla). */
-  netoEur2012: number
+  /** Neto en la unidad de la leyenda inferior (p. ej. nominal o reexpresado al año de la calculadora). */
+  netoDisplayEur: number
+  /** Año que se muestra en la leyenda del neto (p. ej. año de la calculadora). */
+  netoCaptionYear: TaxYear
+  /** Texto entre paréntesis en la frase principal (pasa a `comparisonLegendMainCopy`). */
+  legendAmountContext?: string
 }
 
 /**
- * Cifra del título (tablas comparativas) con el mismo globo de leyenda que al hover en `YearValueTable`.
+ * Cifra del título (resumen comparativo) con leyenda al pasar el cursor.
  */
 export function ComparisonHeadlineValue({
   className,
@@ -26,7 +30,9 @@ export function ComparisonHeadlineValue({
   year,
   refYear,
   delta,
-  netoEur2012,
+  netoDisplayEur,
+  netoCaptionYear,
+  legendAmountContext,
 }: ComparisonHeadlineValueProps) {
   const tipId = useId()
   const [pt, setPt] = useState<{ x: number; y: number } | null>(null)
@@ -72,11 +78,11 @@ export function ComparisonHeadlineValue({
         >
           <p className="m-0 text-sm text-neutral-500">Ejercicio {year}</p>
           <p className="m-0 mt-1.5 text-sm font-medium leading-snug text-neutral-900">
-            {comparisonLegendMainCopy(kind, year, refYear, delta)}
+            {comparisonLegendMainCopy(kind, year, refYear, delta, legendAmountContext)}
           </p>
           <p className="m-0 mt-2 border-t border-neutral-200/60 pt-2 text-sm leading-snug text-neutral-600">
-            Neto (€ {refYear} comp.):{' '}
-            <span className="font-medium text-neutral-800">{formatEur(netoEur2012, 0)}</span>
+            Neto (€ {netoCaptionYear}):{' '}
+            <span className="font-medium text-neutral-800">{formatEur(netoDisplayEur, 0)}</span>
           </p>
         </div>
       ) : null}
