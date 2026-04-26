@@ -241,7 +241,8 @@ export function LandingPage() {
                 <CompareBarChart
                   points={irpfComparablePoints}
                   className="h-44"
-                  variant="mint"
+                  variant="terracotta"
+                  tooltipBgClassName="bg-[color-mix(in_srgb,var(--color-brand-mint-soft)_50%,var(--color-surface))]"
                   formatY={(n) => formatEur(n, 0)}
                   showDeltaVsFirst
                 />

@@ -18,6 +18,11 @@ const barVariantStyles = {
     stroke: 'var(--color-chart-mint-line, rgb(50 95 90))',
     tipBg: 'bg-[color-mix(in_srgb,var(--color-brand-mint-soft)_50%,var(--color-surface))]',
   },
+  terracotta: {
+    fill: 'var(--color-chart-terracotta-fill, rgb(188 115 95))',
+    stroke: 'var(--color-chart-terracotta-line, rgb(120 64 52))',
+    tipBg: 'bg-[color-mix(in_srgb,var(--color-brand-terracotta-soft)_50%,var(--color-surface))]',
+  },
 } as const
 
 function valueToY(
@@ -34,7 +39,9 @@ function valueToY(
 type CompareBarChartProps = {
   points: NetEvolutionPoint[] | null
   className?: string
-  variant: 'lavender' | 'mint'
+  variant: 'lavender' | 'mint' | 'terracotta'
+  /** Sustituye el fondo del tooltip (p. ej. alinear con el contenedor si el trazo y el nombre del token no coinciden). */
+  tooltipBgClassName?: string
   formatY?: (n: number) => string
   tooltipSubtitle?: string
   /** Muestra variación % respecto al primer año (solo sentido con serie homogénea, p. ej. IRPF en €). */
@@ -49,10 +56,12 @@ export function CompareBarChart({
   className,
   variant,
   formatY = (n) => String(n),
+  tooltipBgClassName,
   tooltipSubtitle,
   showDeltaVsFirst = false,
 }: CompareBarChartProps) {
   const colors = barVariantStyles[variant]
+  const tipBg = tooltipBgClassName ?? colors.tipBg
   const [hover, setHover] = useState<{
     index: number
     xPx: number
@@ -199,7 +208,7 @@ export function CompareBarChart({
         <div
           className={[
             'pointer-events-none absolute z-10 w-max min-w-0 max-w-[16rem] rounded-xl px-3 py-2.5 text-left text-xs shadow-sm backdrop-blur-sm [font-family:var(--font-serif)] sm:text-sm',
-            colors.tipBg,
+            tipBg,
           ].join(' ')}
           style={tooltipStyle}
         >
