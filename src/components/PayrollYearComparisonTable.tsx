@@ -1,17 +1,13 @@
 import type { TaxYear } from '../domain/tax'
-import { formatEur, formatPct } from '../lib/format'
+import { formatEur } from '../lib/format'
 
 export type PayrollYearComparisonRow = {
   year: TaxYear
   bruto: number
-  baseCotizacion: number
   cotTrabajador: number
   irpf: number
   neto: number
-  cotEmpresa: number
   costeLaboral: number
-  netoSobreCostePct: number | null
-  poderAdquisitivoDelta: number
 }
 
 type PayrollYearComparisonTableProps = {
@@ -21,17 +17,18 @@ type PayrollYearComparisonTableProps = {
   emptyMessage?: string
 }
 
-const thGroup =
-  'border-b border-neutral-200/80 px-2.5 pb-1.5 pt-0.5 text-center text-[0.65rem] font-medium uppercase tracking-[0.12em] text-neutral-500 first:pl-0 last:pr-0 sm:px-3 sm:text-xs'
-const thSub =
-  'border-b border-neutral-200/80 px-2.5 pb-2.5 pt-0 text-left text-[0.65rem] font-normal uppercase tracking-[0.1em] text-neutral-500 first:pl-0 last:pr-0 sm:px-3 sm:text-xs'
-const tdYear =
-  'sticky left-0 z-10 whitespace-nowrap bg-neutral-100 px-2.5 py-3 text-left text-sm font-medium text-neutral-900 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.08)] [font-family:var(--font-sans)] first:pl-0 sm:px-3 sm:text-[0.9375rem]'
-const tdNum =
-  'px-2.5 py-3 text-right text-sm tabular-nums text-neutral-800 [font-family:var(--font-sans)] sm:px-3 sm:text-[0.9375rem]'
+/** Mismo padding horizontal en cabecera y cuerpo para que las columnas coincidan. */
+const padX = 'px-3'
+const padYHead = 'py-2.5'
+const padYBody = 'py-3'
+
+const thYear = `${padX} ${padYHead} text-left text-[0.65rem] font-normal uppercase tracking-[0.12em] text-neutral-500 sm:text-xs`
+const thNum = `${padX} ${padYHead} text-right text-[0.65rem] font-normal uppercase tracking-[0.12em] text-neutral-500 sm:text-xs`
+const tdYear = `sticky left-0 z-10 ${padX} ${padYBody} whitespace-nowrap bg-neutral-100 text-left text-sm font-medium text-neutral-900 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.08)] [font-family:var(--font-sans)] sm:text-[0.9375rem]`
+const tdNum = `${padX} ${padYBody} text-right text-sm tabular-nums text-neutral-800 [font-family:var(--font-sans)] sm:text-[0.9375rem]`
 
 /**
- * Tabla anual: devengos, deducciones tipo nómina, coste empresa y Δ poder adquisitivo.
+ * Evolución anual en clave nómina: bruto, neto, retenciones y coste total.
  * Importes en euros del año `refYear` (IPC diciembre–diciembre).
  */
 export function PayrollYearComparisonTable({
@@ -52,81 +49,58 @@ export function PayrollYearComparisonTable({
 
   return (
     <div className="-mx-1 min-w-0 overflow-x-auto px-1 sm:mx-0 sm:px-0">
-      <table className="w-full min-w-[56rem] border-collapse text-left [font-family:var(--font-sans)]">
+      <table className="w-full table-fixed border-separate border-spacing-0 text-left [font-family:var(--font-sans)]">
         <caption className="sr-only">
-          Evolución por ejercicio fiscal: bruto, cotizaciones, IRPF, neto y coste laboral en euros de {refYear}
+          Por ejercicio: bruto, neto, cotización del trabajador, IRPF y coste laboral aproximado; euros de{' '}
+          {refYear}.
         </caption>
+        <colgroup>
+          <col className="w-[4.25rem] sm:w-20" />
+          <col />
+          <col />
+          <col />
+          <col />
+          <col />
+        </colgroup>
         <thead>
           <tr>
-            <th scope="col" rowSpan={2} className={thGroup + ' w-14 text-left align-bottom'}>
+            <th scope="col" className={thYear + ' border-b border-neutral-200/80'}>
               Año
             </th>
-            <th scope="colgroup" colSpan={2} className={thGroup}>
-              Devengos
-            </th>
-            <th scope="colgroup" colSpan={3} className={thGroup}>
-              Deducciones
-            </th>
-            <th scope="col" rowSpan={2} className={thGroup + ' align-bottom'}>
-              Líquido
-            </th>
-            <th scope="colgroup" colSpan={2} className={thGroup}>
-              Empresa / total
-            </th>
-            <th scope="col" rowSpan={2} className={thGroup + ' align-bottom'}>
-              Neto / coste
-            </th>
-            <th scope="col" rowSpan={2} className={thGroup + ' align-bottom'}>
-              Δ Poder vs 2012
-            </th>
-          </tr>
-          <tr>
-            <th scope="col" className={thSub}>
+            <th scope="col" className={thNum + ' border-b border-neutral-200/80'}>
               Bruto
             </th>
-            <th scope="col" className={thSub}>
-              Base cot. SS
+            <th scope="col" className={thNum + ' border-b border-neutral-200/80'}>
+              Neto
             </th>
-            <th scope="col" className={thSub}>
+            <th scope="col" className={thNum + ' border-b border-neutral-200/80'}>
               Cot. SS trab.
             </th>
-            <th scope="col" className={thSub}>
+            <th scope="col" className={thNum + ' border-b border-neutral-200/80'}>
               IRPF
             </th>
-            <th scope="col" className={thSub}>
-              Total ded.
-            </th>
-            <th scope="col" className={thSub}>
-              Cot. SS emp.
-            </th>
-            <th scope="col" className={thSub}>
-              Coste lab.
+            <th scope="col" className={thNum + ' border-b border-neutral-200/80'}>
+              Coste total
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-neutral-200/60">
-          {rows.map((r) => {
-            const totalDed = r.cotTrabajador + r.irpf
-            return (
-              <tr key={r.year} className="transition-colors hover:bg-neutral-200/25">
-                <th scope="row" className={tdYear}>
-                  {r.year}
-                </th>
-                <td className={tdNum}>{formatEur(r.bruto, 0)}</td>
-                <td className={tdNum}>{formatEur(r.baseCotizacion, 0)}</td>
-                <td className={tdNum}>{formatEur(r.cotTrabajador, 0)}</td>
-                <td className={tdNum}>{formatEur(r.irpf, 0)}</td>
-                <td className={tdNum}>{formatEur(totalDed, 0)}</td>
-                <td className={tdNum}>{formatEur(r.neto, 0)}</td>
-                <td className={tdNum}>{formatEur(r.cotEmpresa, 0)}</td>
-                <td className={tdNum}>{formatEur(r.costeLaboral, 0)}</td>
-                <td className={tdNum}>
-                  {r.netoSobreCostePct != null ? formatPct(r.netoSobreCostePct, 1) : '—'}
-                </td>
-                <td className={tdNum}>{formatEur(r.poderAdquisitivoDelta, 0)}</td>
-              </tr>
-            )
-          })}
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={r.year} className="transition-colors hover:bg-neutral-200/25">
+              <th scope="row" className={tdYear + (i > 0 ? ' border-t border-neutral-200/60' : '')}>
+                {r.year}
+              </th>
+              <td className={tdNum + (i > 0 ? ' border-t border-neutral-200/60' : '')}>{formatEur(r.bruto, 0)}</td>
+              <td className={tdNum + (i > 0 ? ' border-t border-neutral-200/60' : '')}>{formatEur(r.neto, 0)}</td>
+              <td className={tdNum + (i > 0 ? ' border-t border-neutral-200/60' : '')}>
+                {formatEur(r.cotTrabajador, 0)}
+              </td>
+              <td className={tdNum + (i > 0 ? ' border-t border-neutral-200/60' : '')}>{formatEur(r.irpf, 0)}</td>
+              <td className={tdNum + (i > 0 ? ' border-t border-neutral-200/60' : '')}>
+                {formatEur(r.costeLaboral, 0)}
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

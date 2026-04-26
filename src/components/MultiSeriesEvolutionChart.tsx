@@ -1,6 +1,6 @@
 import { useCallback, useId, useMemo, useState, type CSSProperties } from 'react'
 import type { TaxYear } from '../domain/tax'
-import { formatPct, formatSignedPctCompact } from '../lib/format'
+import { formatEur, formatPct, formatSignedPctCompact } from '../lib/format'
 
 const VIEW = { w: 100, h: 44 }
 
@@ -16,8 +16,17 @@ function buildYTicks(yAxisLo: number, yAxisHi: number): number[] {
   return out
 }
 
-/** `value` = % acumulado desde 2012; `yoyPercent` = variación intra-anual de ese año (vs año anterior). */
-export type MultiSeriesPoint = { year: TaxYear; value: number; yoyPercent?: number | null }
+/**
+ * `value` = % acumulado vs `baselineYear`; `yoyPercent` = intra-anual.
+ * Opcional: Δ en € vs el mismo año base (constantes base) y en € nominales del año de referencia.
+ */
+export type MultiSeriesPoint = {
+  year: TaxYear
+  value: number
+  yoyPercent?: number | null
+  deltaEurVsBaselineConstant?: number | null
+  deltaEurVsBaselineNominalRefYear?: number | null
+}
 
 export type ChartVariant =
   | 'green'
@@ -43,6 +52,8 @@ type MultiSeriesEvolutionChartProps = {
   baselineYear?: TaxYear
   /** Título opcional junto al eje Y (si se omite, no se muestra). */
   yAxisLabel?: string
+  /** Si las series traen `deltaEurVsBaselineNominalRefYear`, etiqueta del año nominal (p. ej. calculadora). */
+  euroNominalRefYear?: TaxYear
 }
 
 const variantStyles: Record<ChartVariant, { fillVar: string; lineVar: string }> = {
@@ -117,6 +128,7 @@ export function MultiSeriesEvolutionChart({
   yFormat = (n) => formatPct(n, 1),
   baselineYear = 2012,
   yAxisLabel,
+  euroNominalRefYear,
 }: MultiSeriesEvolutionChartProps) {
   const gradId = useId()
   const labelledById = useId()
@@ -190,13 +202,15 @@ export function MultiSeriesEvolutionChart({
     return { layoutBySeries: map, mn, mx, pad, yTicks, yAxisHi, yAxisLo }
   }, [usableSeries, years, yearToIndex])
 
+  /** Hit-test solo sobre el tramo del plot (SVG + eje X), no la columna de ticks del eje Y,
+   * para que x=0 y x=ancho correspondan a 2012 y al último año (p. ej. 2026). */
   const onMove = useCallback(
-    (clientX: number, clientY: number, currentTarget: HTMLDivElement) => {
+    (clientX: number, clientY: number, plotEl: HTMLDivElement) => {
       if (years.length === 0) return
-      const r = currentTarget.getBoundingClientRect()
+      const r = plotEl.getBoundingClientRect()
       const xPx = clientX - r.left
       const yPx = clientY - r.top
-      const x = xPx / r.width
+      const x = r.width > 0 ? Math.min(1, Math.max(0, xPx / r.width)) : 0
       const idx =
         years.length === 1
           ? 0
@@ -220,7 +234,7 @@ export function MultiSeriesEvolutionChart({
     if (!hover) return null
     const offsetX = 6
     const gap = 6
-    const approxW = 240
+    const approxW = 280
     const { xPx, yPx, boxW, boxH } = hover
     const left = Math.min(Math.max(6, xPx + offsetX), Math.max(6, boxW - approxW - 6))
     const preferAbove = yPx > 60
@@ -280,14 +294,33 @@ export function MultiSeriesEvolutionChart({
                   className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: colors.lineVar }}
                 />
-                <span className="min-w-0 truncate font-medium tabular-nums text-neutral-900">
-                  {s.label}
-                  {v != null ? (
-                    <>
-                      {' '}
-                      {formatSignedPctCompact(v, 1)}
-                    </>
-                  ) : null}
+                <span className="flex min-w-0 max-w-full flex-col items-start gap-0.5">
+                  <span className="min-w-0 truncate font-medium tabular-nums text-neutral-900">
+                    {s.label}
+                    {v != null ? (
+                      <>
+                        {' '}
+                        {formatSignedPctCompact(v, 1)}
+                      </>
+                    ) : null}
+                  </span>
+                  {(() => {
+                    const e = pt?.deltaEurVsBaselineConstant
+                    if (e == null || !Number.isFinite(e)) return null
+                    return (
+                      <span className="max-w-full truncate text-[11px] font-normal tabular-nums text-neutral-600">
+                        {formatEur(e, 0)} const. {baselineYear}
+                        {euroNominalRefYear != null &&
+                        pt?.deltaEurVsBaselineNominalRefYear != null &&
+                        Number.isFinite(pt.deltaEurVsBaselineNominalRefYear) ? (
+                          <>
+                            {' · '}
+                            {formatEur(pt.deltaEurVsBaselineNominalRefYear, 0)} nom. {euroNominalRefYear}
+                          </>
+                        ) : null}
+                      </span>
+                    )
+                  })()}
                 </span>
               </button>
             </li>
@@ -296,12 +329,9 @@ export function MultiSeriesEvolutionChart({
       </ul>
 
       <div
-        className="relative w-full min-h-0 touch-none select-none overflow-visible"
+        className="w-full min-h-0 touch-none select-none overflow-visible"
         role="figure"
         aria-labelledby={labelledById}
-        onPointerEnter={(e) => onMove(e.clientX, e.clientY, e.currentTarget)}
-        onPointerMove={(e) => onMove(e.clientX, e.clientY, e.currentTarget)}
-        onPointerLeave={() => setHover(null)}
       >
         <p id={labelledById} className="sr-only">
           Gráfico: {usableSeries.map((s) => s.label).join(', ')}. Valores en porcentaje respecto a {baselineYear}.
@@ -330,7 +360,12 @@ export function MultiSeriesEvolutionChart({
               )
             })}
           </div>
-          <div className="min-w-0 flex-1">
+          <div
+            className="relative min-w-0 flex-1 select-none"
+            onPointerEnter={(e) => onMove(e.clientX, e.clientY, e.currentTarget)}
+            onPointerMove={(e) => onMove(e.clientX, e.clientY, e.currentTarget)}
+            onPointerLeave={() => setHover(null)}
+          >
         <svg
           className="h-72 w-full sm:h-96"
           viewBox={`0 0 ${VIEW.w} ${VIEW.h}`}
@@ -453,65 +488,86 @@ export function MultiSeriesEvolutionChart({
             ))}
           </div>
         ) : null}
+
+            {/* Tooltip multi-serie (dentro del área del plot para coordenadas correctas). */}
+            {hover && hoveredYear != null && tooltipStyle ? (
+              <div
+                className="pointer-events-none absolute z-10 w-max min-w-0 max-w-[24rem] rounded-xl bg-[color-mix(in_srgb,var(--color-neutral-50)_85%,var(--color-neutral-100))] px-3 py-2.5 text-left shadow-sm backdrop-blur-md [font-family:var(--font-sans)]"
+                style={tooltipStyle}
+              >
+                <p className="m-0 text-base font-semibold leading-none tracking-[-0.02em] text-neutral-900">
+                  {hoveredYear}
+                </p>
+                <ul className="m-0 mt-2 flex list-none flex-col gap-2 p-0">
+                  {usableSeries.map((s) => {
+                    const colors = variantStyles[s.variant]
+                    const pt = pointAt(s, hoveredYear)
+                    if (pt == null) return null
+                    const v = pt.value
+                    const yoy = pt.yoyPercent
+                    const isFocused = focusedId === s.id
+                    const dim = focusedId != null && !isFocused
+                    return (
+                      <li key={s.id} className="m-0 flex items-start gap-2 p-0">
+                        <span
+                          aria-hidden
+                          className="mt-1 inline-block h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: colors.lineVar }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className={[
+                              'm-0 text-sm leading-tight',
+                              dim ? 'text-neutral-500' : 'text-neutral-700',
+                            ].join(' ')}
+                          >
+                            {s.label}
+                          </p>
+                          <p
+                            className={[
+                              'm-0 mt-0.5 text-xs leading-snug tabular-nums',
+                              isFocused
+                                ? 'font-semibold text-neutral-900'
+                                : dim
+                                  ? 'text-neutral-500'
+                                  : 'text-neutral-800',
+                            ].join(' ')}
+                          >
+                            Acumulado (vs {baselineYear}): {yFormat(v)}
+                            <span className="text-neutral-500"> · </span>
+                            Intra {hoveredYear}:{' '}
+                            {yoy != null && Number.isFinite(yoy) ? yFormat(yoy) : '—'}
+                          </p>
+                          {pt.deltaEurVsBaselineConstant != null &&
+                          Number.isFinite(pt.deltaEurVsBaselineConstant) ? (
+                            <p
+                              className={[
+                                'm-0 mt-1 text-[11px] leading-snug tabular-nums',
+                                dim ? 'text-neutral-500' : 'text-neutral-600',
+                              ].join(' ')}
+                            >
+                              Δ vs {baselineYear}: {formatEur(pt.deltaEurVsBaselineConstant, 0)} en € const.{' '}
+                              {baselineYear}
+                              {euroNominalRefYear != null &&
+                              pt.deltaEurVsBaselineNominalRefYear != null &&
+                              Number.isFinite(pt.deltaEurVsBaselineNominalRefYear) ? (
+                                <>
+                                  <span className="text-neutral-400"> · </span>
+                                  ≈ {formatEur(pt.deltaEurVsBaselineNominalRefYear, 0)} nominales{' '}
+                                  {euroNominalRefYear}
+                                </>
+                              ) : null}
+                            </p>
+                          ) : null}
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            ) : null}
           </div>
         </div>
-
-        {/* Tooltip multi-serie. */}
-        {hover && hoveredYear != null && tooltipStyle ? (
-          <div
-            className="pointer-events-none absolute z-10 w-max min-w-0 max-w-[20rem] rounded-xl bg-[color-mix(in_srgb,var(--color-neutral-50)_85%,var(--color-neutral-100))] px-3 py-2.5 text-left shadow-sm backdrop-blur-md [font-family:var(--font-sans)]"
-            style={tooltipStyle}
-          >
-            <p className="m-0 text-base font-semibold leading-none tracking-[-0.02em] text-neutral-900">
-              {hoveredYear}
-            </p>
-            <ul className="m-0 mt-2 flex list-none flex-col gap-2 p-0">
-              {usableSeries.map((s) => {
-                const colors = variantStyles[s.variant]
-                const pt = pointAt(s, hoveredYear)
-                if (pt == null) return null
-                const v = pt.value
-                const yoy = pt.yoyPercent
-                const isFocused = focusedId === s.id
-                const dim = focusedId != null && !isFocused
-                return (
-                  <li key={s.id} className="m-0 flex items-start gap-2 p-0">
-                    <span
-                      aria-hidden
-                      className="mt-1 inline-block h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: colors.lineVar }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={[
-                          'm-0 text-sm leading-tight',
-                          dim ? 'text-neutral-500' : 'text-neutral-700',
-                        ].join(' ')}
-                      >
-                        {s.label}
-                      </p>
-                      <p
-                        className={[
-                          'm-0 mt-0.5 text-xs leading-snug tabular-nums',
-                          isFocused
-                            ? 'font-semibold text-neutral-900'
-                            : dim
-                              ? 'text-neutral-500'
-                              : 'text-neutral-800',
-                        ].join(' ')}
-                      >
-                        Acumulado (vs {baselineYear}): {yFormat(v)}
-                        <span className="text-neutral-500"> · </span>
-                        Intra {hoveredYear}:{' '}
-                        {yoy != null && Number.isFinite(yoy) ? yFormat(yoy) : '—'}
-                      </p>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ) : null}
       </div>
     </div>
   )
