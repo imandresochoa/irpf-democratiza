@@ -1,53 +1,17 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { computeInflationComparisonRow, computePayrollBreakdown, TAX_YEARS, type TaxYear } from '../domain/tax'
+import {
+  computeInflationComparisonRow,
+  computePayrollBreakdown,
+  getCalculatorTaxYear,
+  TAX_YEARS,
+} from '../domain/tax'
 import { EurAmountInput } from '../components/EurAmountInput'
 import { NetEvolutionChart } from '../components/NetEvolutionChart'
 import { formatEur, parseEurInputToNumber } from '../lib/format'
 import heroCharacterImage from '../assets/images/hero-character.svg'
 
-const quickCalcYear: TaxYear = 2026
-
-const homeCards = [
-  {
-    title: 'Manual',
-    description:
-      'Lee el orden del cálculo y las reglas principales detrás de cotizaciones, retenciones e inflación.',
-    to: '/manual',
-    cta: 'Leer manual',
-    className: 'bg-neutral-100',
-    imageLabel: 'Guía de cálculo',
-  },
-  {
-    title: 'Calcular',
-    description:
-      'Introduce bruto y año. Verás el neto resaltado y un desglose por etapas del cálculo.',
-    to: '/calcular',
-    cta: 'Abrir calculadora',
-    className: 'bg-neutral-100',
-    imageLabel: 'Gráfico de nómina',
-  },
-  {
-    title: 'Comparar',
-    description:
-      'Fija un salario en euros de 2026 y compara poder adquisitivo con un año anterior.',
-    to: '/comparar',
-    cta: 'Comparar años',
-    className: 'bg-neutral-100',
-    imageLabel: 'Comparativa anual',
-  },
-  {
-    title: 'Normativa',
-    description:
-      'Consulta los cambios clave en tramos, mínimos, MEI y otros parámetros del modelo.',
-    to: '/normativa',
-    cta: 'Ver fuentes',
-    className: 'bg-neutral-100',
-    imageLabel: 'Fuentes oficiales',
-  },
-] as const
-
 export function LandingPage() {
+  const quickCalcYear = getCalculatorTaxYear()
   const [quickGrossInput, setQuickGrossInput] = useState('15574,85')
 
   const quickGrossAnnual = useMemo(() => {
@@ -57,10 +21,9 @@ export function LandingPage() {
 
   const quickNetAnnual = useMemo(() => {
     if (quickGrossAnnual === null) return null
-    return computePayrollBreakdown(quickGrossAnnual, quickCalcYear).salarioNeto
+    return computePayrollBreakdown(quickGrossAnnual, getCalculatorTaxYear()).salarioNeto
   }, [quickGrossAnnual])
 
-  /** Mismo criterio que en /comparar: bruto fijado en euros 2026, neto reexpresado a poder adquisitivo 2026 (IPC encadenado). */
   const netEvolutionPoints = useMemo(() => {
     if (quickGrossAnnual === null) return null
     return TAX_YEARS.map((year) => {
@@ -87,16 +50,10 @@ export function LandingPage() {
             </div>
             <div className="flex w-full min-w-0 flex-col pt-0 lg:col-span-5 lg:pt-0.5">
               <p className="m-0 text-hero-lead [font-family:var(--font-serif)] text-neutral-800">
-                Entiende qué parte de tu salario se destina a IRPF y cotizaciones, compara tu poder adquisitivo con años anteriores y consulta las fuentes oficiales detrás de cada cálculo.
+                Prueba un bruto anual y ve el neto estimado para el ejercicio en curso. El gráfico muestra
+                cómo habría variado tu neto en años anteriores (misma norma de cada año, reexpresado a
+                euros actuales con el IPC encadenado).
               </p>
-              <div className="mt-6 flex flex-wrap gap-3 lg:mt-8">
-                <Link
-                  to="/calcular"
-                  className="inline-flex items-center justify-center rounded-lg bg-black px-4 py-2.5 text-base font-normal text-white no-underline [font-family:var(--font-sans)] transition-opacity hover:opacity-95"
-                >
-                  Calculadora de sueldo neto
-                </Link>
-              </div>
             </div>
           </div>
         </div>
@@ -137,8 +94,8 @@ export function LandingPage() {
                 Evolución del neto
               </p>
               <p className="mb-0 mt-2 text-base text-neutral-800" style={{ fontFamily: 'var(--font-serif)' }}>
-                Neto de cada ejercicio (norma de ese año) reexpresado a euros {quickCalcYear} con el IPC, como en
-                Comparar.
+                Neto de cada ejercicio (norma de ese año) reexpresado a euros {quickCalcYear} con el IPC
+                encadenado.
               </p>
             </div>
             <div className="mt-4 flex min-h-0 flex-1 flex-col justify-end">
@@ -170,37 +127,6 @@ export function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="space-y-4" aria-label="Secciones principales">
-        {homeCards.map((card) => (
-          <article
-            key={card.to}
-            className={`${card.className} grid min-h-56 gap-8 rounded-xl p-8 sm:grid-cols-[minmax(0,1fr)_13rem] sm:items-center`}
-          >
-            <div className="max-w-xl">
-              <h2
-                className="mt-0 text-3xl font-semibold tracking-[-0.01em] text-neutral-900"
-                style={{ fontFamily: 'var(--font-serif)' }}
-              >
-                {card.title}
-              </h2>
-              <p className="mb-0 mt-3 max-w-lg text-lg text-neutral-800">{card.description}</p>
-              <Link
-                to={card.to}
-                className="mt-8 flex w-fit items-center rounded-lg border border-black px-4 py-2.5 text-base font-normal text-neutral-800 no-underline [font-family:var(--font-sans)] transition-colors duration-200 hover:bg-neutral-800 hover:text-white"
-              >
-                {card.cta}
-              </Link>
-            </div>
-            <div
-              className="flex aspect-square w-36 items-center justify-center justify-self-end rounded-xl bg-neutral-900/10 text-center text-xs font-medium uppercase tracking-wide text-neutral-800 sm:w-44"
-              aria-hidden="true"
-            >
-              {card.imageLabel}
-            </div>
-          </article>
-        ))}
       </section>
     </div>
   )

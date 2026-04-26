@@ -1,4 +1,4 @@
-# Simulador de nómina e IRPF
+# Comparador de sueldo neto
 
 Aplicación web (React, TypeScript, Vite) para explicar el paso del salario bruto al neto en España entre **2012 y 2026**: cotizaciones a la Seguridad Social, reducción por trabajo, escala del IRPF, deducción vinculada al SMI (en los años del modelo) y tope de retención. Incluye una comparativa de **poder adquisitivo** reescalando nóminas históricas con IPC diciembre–diciembre hasta 2026.
 
@@ -19,11 +19,7 @@ npm run lint
 
 ## Rutas
 
-- `/` — Landing y avisos
-- `/manual` — Manual breve por capítulos (`/manual/orden`, etc.)
-- `/calcular` — Asistente por pasos; query opcional `?y=AÑO&g=BRUTO_ANUAL`
-- `/comparar` — Comparativa IPC; query `?y=AÑO&g=BRUTO_EN_2026`
-- `/normativa` — Línea de tiempo de hitos del modelo
+- `/` — Única página: calculadora rápida (bruto → neto estimado) y gráfico de evolución del neto por ejercicio (IPC).
 
 ## Auditar los cálculos
 

@@ -199,7 +199,7 @@ export function NetEvolutionChart({ points, className }: NetEvolutionChartProps)
           <p className="m-0 mt-0.5 text-2xl font-semibold leading-none tracking-[-0.03em] text-neutral-900">
             {formatEur(hp.net, 0)}
           </p>
-          {firstPoint.net !== 0 && pctVsFirst !== null && Number.isFinite(pctVsFirst) ? (
+          {firstPoint && firstPoint.net !== 0 && pctVsFirst !== null && Number.isFinite(pctVsFirst) ? (
             <p className="m-0 mt-1.5 text-sm leading-snug text-neutral-600">
               <span className="text-neutral-500">Acum. vs {firstPoint.year}</span>{' '}
               <span className="font-medium text-neutral-800">
