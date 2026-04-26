@@ -11,12 +11,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const updateHeaderBrutoVisibility = useCallback(() => {
     const el = calculatorSectionRef.current
+    const scrollY = window.scrollY || document.documentElement.scrollTop
+    // En cuanto el usuario hace scroll, o si la calculadora entra bajo la barra sticky (h-14 ≈ 56px).
     if (el == null) {
-      setHeaderBrutoVisible(false)
+      setHeaderBrutoVisible(scrollY > 12)
       return
     }
-    // Toda la tarjeta calculadora quedó por encima del viewport: el usuario ha pasado esa sección.
-    setHeaderBrutoVisible(el.getBoundingClientRect().bottom < 0)
+    const rect = el.getBoundingClientRect()
+    const stickyHeaderPx = 56
+    setHeaderBrutoVisible(scrollY > 12 || rect.top < stickyHeaderPx)
   }, [calculatorSectionRef])
 
   useEffect(() => {

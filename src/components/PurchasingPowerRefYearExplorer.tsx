@@ -62,6 +62,12 @@ export function PurchasingPowerRefYearExplorer({
     return reexpressNominalEurAeurConstante(grossNominal, currentYear, refYear)
   }, [grossNominal, currentYear, refYear])
 
+  /** Diferencia en € entre el neto en constantes (derecha) y el nominal (izquierda). */
+  const netDeltaVsNominal = useMemo(() => {
+    if (netNominal == null || netInRef == null) return null
+    return netInRef - netNominal
+  }, [netNominal, netInRef])
+
   /** Texto breve: variación del neto al pasar a € constantes + subida/bajada del IPC entre años. */
   const resumenPoderAdquisitivo = useMemo(() => {
     if (netNominal == null || netInRef == null || refYear === currentYear) return null
@@ -123,9 +129,9 @@ export function PurchasingPowerRefYearExplorer({
         Poder adquisitivo real
       </h2>
       <p className="m-0 text-base leading-relaxed text-neutral-800 [font-family:var(--font-serif)]">
-        Elige el año con el que quieres medir el <strong className="font-semibold">poder de compra</strong> de tu
-        nómina (IPC al consumo, diciembre a diciembre). La cifra de la derecha es la misma nómina en otra unidad,
-        no otra persona ni otro salario histórico.
+        Elige el año para comparar tu poder adquisitivo. La cifra de la derecha muestra tu nómina en euros de ese
+        año. Esta comparación te permite ver si tu dinero rinde más o menos que antes, es decir, cuánto han cambiado
+        los precios y tu capacidad real de compra.
       </p>
 
       <label
@@ -156,10 +162,6 @@ export function PurchasingPowerRefYearExplorer({
         className="border-t border-neutral-200/70 pt-5 sm:pt-6"
         aria-describedby={groupId + '-a'}
       >
-        <p className="m-0 mb-4 text-sm leading-relaxed text-neutral-600 [font-family:var(--font-serif)]">
-          Izquierda: euros de nómina de {currentYear}. Derecha: esos mismos euros leídos con precios cerrados en{' '}
-          {refYear}.
-        </p>
         <div
           className="grid min-h-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:items-stretch sm:gap-5"
           role="group"
@@ -167,28 +169,34 @@ export function PurchasingPowerRefYearExplorer({
         >
           <div className={kCompareBoxClass}>
             <p className="m-0 text-xs font-medium uppercase tracking-wider text-neutral-500 [font-family:var(--font-sans)]">
-              Neto en nómina (nominal) · {currentYear}
+              Tu salario neto actual (nominal)
             </p>
             <p className={`${kNetCompareFigureClass} mt-3`}>{formatEur(netNominal, 0)}</p>
-            <p className="m-0 mt-3 text-sm leading-relaxed text-neutral-600 [font-family:var(--font-serif)]">
-              Cifra del mes con la ley e inflación al momento. Es la de la calculadora de arriba.
-            </p>
           </div>
           <div className={kCompareBoxClass}>
             <p className="m-0 text-xs font-medium uppercase tracking-wider text-neutral-500 [font-family:var(--font-sans)]">
               Neto en € {refYear} (constantes, IPC diciembre–diciembre)
             </p>
-            <p className={`${kNetCompareFigureClass} mt-3`}>{formatEur(netInRef, 0)}</p>
-            <p className="m-0 mt-3 text-sm leading-relaxed text-neutral-600 [font-family:var(--font-serif)]">
-              Misma nómina, expresada con la cesta de precios de {refYear} (constantes IPC).
-            </p>
+            <div className="mt-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+              <span className="text-2xl font-semibold leading-tight tabular-nums text-neutral-900 sm:text-3xl">
+                {formatEur(netInRef, 0)}
+              </span>
+              {refYear !== currentYear && netDeltaVsNominal != null ? (
+                <span
+                  className={`text-lg font-semibold leading-tight tabular-nums sm:text-xl ${
+                    netDeltaVsNominal < 0
+                      ? 'text-[color:var(--color-chart-terracotta-line)]'
+                      : netDeltaVsNominal > 0
+                        ? 'text-[color:var(--color-chart-green-line)]'
+                        : 'text-neutral-600'
+                  }`}
+                >
+                  {formatEur(netDeltaVsNominal, 0)}
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
-        <p className="m-0 mt-4 text-sm leading-relaxed text-neutral-600 [font-family:var(--font-sans)]">
-          <span className="font-medium text-neutral-800">Bruto anual:</span>{' '}
-          <span className="text-neutral-800">{formatEur(grossNominal, 0)}</span> nominal ·{' '}
-          <span className="text-neutral-800">{formatEur(grossInRef, 0)}</span> en € {refYear} constantes.
-        </p>
         {resumenPoderAdquisitivo != null ? (
           <p className="m-0 mt-4 text-base leading-relaxed text-neutral-800 [font-family:var(--font-serif)]">
             {resumenPoderAdquisitivo.modo === 'pasado' ? (
