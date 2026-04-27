@@ -22,7 +22,7 @@ type PayrollYearLensSectionProps = {
 }
 
 const labelClass =
-  'min-w-0 shrink text-left text-[0.65rem] font-medium uppercase leading-snug tracking-[0.14em] text-neutral-600'
+  'min-w-0 shrink text-left text-[0.7rem] font-medium uppercase leading-snug tracking-[0.08em] text-neutral-600 sm:text-[0.65rem] sm:tracking-[0.14em]'
 const valueBlack = 'shrink-0 text-right text-sm font-normal tabular-nums text-neutral-900 sm:text-[0.9375rem]'
 const valueDed = `${valueBlack} text-red-700`
 const captionClass =
@@ -119,8 +119,8 @@ function ConceptRow({ label, detail, open, onToggle, right, footer, noBorder }: 
         .filter(Boolean)
         .join(' ')}
     >
-      <div className="flex min-w-0 items-baseline justify-between gap-3 py-2.5">
-        <div className="flex min-w-0 items-center gap-1.5 pr-2">
+      <div className="flex min-w-0 flex-col gap-1.5 py-2.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+        <div className="flex min-w-0 items-center gap-1.5 pr-0 sm:pr-2">
           <span className={labelClass}>{label}</span>
           <span className="relative inline-flex">
             <button
@@ -140,7 +140,7 @@ function ConceptRow({ label, detail, open, onToggle, right, footer, noBorder }: 
             )}
           </span>
         </div>
-        <div className="shrink-0 text-right">{right}</div>
+        <div className="w-full min-w-0 text-right sm:w-auto sm:shrink-0">{right}</div>
       </div>
       {footer ? <div className="pb-3.5">{footer}</div> : null}
     </div>
@@ -359,7 +359,7 @@ function CostOfLivingCard({ row, baseRow }: { row: PayrollYearLensRow; baseRow: 
             open={openSource === category}
             onToggle={() => toggleSource(category)}
             right={
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
                 <p className={`m-0 ${captionClass}`}>{formatPct(pct, 1)} del neto</p>
                 <p className={`m-0 ${valueBlack}`}>{formatEur(item.amountMonthlyEur, 0)}/mes</p>
               </div>

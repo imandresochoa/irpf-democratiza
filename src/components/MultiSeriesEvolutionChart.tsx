@@ -306,9 +306,9 @@ export function MultiSeriesEvolutionChart({
 
   return (
     <div className={['flex w-full min-w-0 flex-col gap-3 sm:gap-4', className ?? ''].join(' ')}>
-      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+      <div className="flex min-w-0">
         <ul
-          className="m-0 flex list-none flex-wrap items-center gap-x-4 gap-y-2 p-0 [font-family:var(--font-sans)]"
+          className="m-0 flex w-full list-none flex-wrap items-center gap-x-4 gap-y-2 p-0 [font-family:var(--font-sans)]"
           aria-label="Series del gráfico (toca o haz clic para resaltar)"
         >
           {usableSeries.map((s) => {
@@ -340,7 +340,14 @@ export function MultiSeriesEvolutionChart({
                   />
                   <span className="flex min-w-0 max-w-full flex-col items-start gap-0.5">
                     <span className="min-w-0 truncate font-medium tabular-nums text-neutral-900">
-                      {s.label}
+                      {s.id === 'poder' ? (
+                        <>
+                          <span className="sm:hidden">Poder adquisitivo</span>
+                          <span className="hidden sm:inline">{s.label}</span>
+                        </>
+                      ) : (
+                        s.label
+                      )}
                       {v != null ? (
                         <>
                           {' '}
@@ -353,15 +360,16 @@ export function MultiSeriesEvolutionChart({
               </li>
             )
           })}
+          {topRightControl != null ? <li className="m-0 ml-auto p-0">{topRightControl}</li> : null}
         </ul>
-        {topRightControl != null ? <div className="shrink-0 sm:pt-0.5">{topRightControl}</div> : null}
       </div>
 
-      <div
-        className="w-full min-h-0 touch-none select-none overflow-visible"
-        role="figure"
-        aria-labelledby={labelledById}
-      >
+      <div className="w-full overflow-x-auto pb-1">
+        <div
+          className="min-w-[38rem] min-h-0 touch-none select-none overflow-visible sm:min-w-0"
+          role="figure"
+          aria-labelledby={labelledById}
+        >
         <p id={labelledById} className="sr-only">
           Gráfico: {usableSeries.map((s) => s.label).join(', ')}. Valores en porcentaje respecto a {baselineYear}.
         </p>
@@ -622,6 +630,7 @@ export function MultiSeriesEvolutionChart({
               </div>
             ) : null}
           </div>
+        </div>
         </div>
       </div>
     </div>

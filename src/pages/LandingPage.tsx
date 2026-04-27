@@ -23,7 +23,7 @@ import { formatEur, formatPct, parseEurInputToNumber } from '../lib/format'
 const kComparisonTableCardClass =
   'flex min-w-0 flex-col gap-5 rounded-xl bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-6'
 const toggleBtnBase =
-  'inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]'
+  'inline-flex w-auto shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]'
 const comparadaTitleClass =
   'm-0 text-2xl font-semibold leading-tight text-neutral-900 sm:text-3xl'
 const comparadaMetricClass = 'm-0 text-sm font-medium leading-tight'
@@ -338,8 +338,8 @@ export function LandingPage() {
               <h2 className={comparadaTitleClass}>
                 Evolución comparada
               </h2>
-              <div className="flex shrink-0 items-baseline gap-6">
-                <div className="group relative flex items-baseline gap-2">
+              <div className="flex min-w-0 shrink-0 flex-col items-start gap-1.5 sm:flex-row sm:items-baseline sm:gap-6">
+                <div className="group relative flex min-w-0 items-baseline gap-2">
                   <span className={`${comparadaMetricClass} text-neutral-900`}>
                     NETO {comparadaAbsSummary?.targetYear ?? selectedComparadaYear}:
                   </span>
@@ -352,7 +352,7 @@ export function LandingPage() {
                       : `Total anual de salario neto nominal en ${comparadaAbsSummary.targetYear}: ${formatSignedEur(comparadaAbsSummary.netoNominalTotal)}.`}
                   </span>
                 </div>
-                <div className="group relative flex items-baseline gap-2">
+                <div className="group relative flex min-w-0 items-baseline gap-2">
                   <span className={`${comparadaMetricClass} text-neutral-900`}>
                     VARIACIÓN PODER ADQUISITIVO:
                   </span>
@@ -390,17 +390,10 @@ export function LandingPage() {
                 selectedYear={selectedComparadaYear}
                 onYearClick={(year) => setSelectedComparadaYear(year)}
                 topRightControl={
-                  <div className="flex items-center gap-3">
-                    <p
-                      className={[
-                        'm-0 text-right text-xs uppercase leading-snug tracking-[0.02em] text-neutral-700 [font-family:var(--font-sans)] transition-opacity',
-                        escenarioIrpfDeflactado && irpfDeflactadoImpacto != null ? 'opacity-100' : 'opacity-0',
-                      ].join(' ')}
-                      aria-hidden={!escenarioIrpfDeflactado || irpfDeflactadoImpacto == null}
-                    >
-                      {irpfDeflactadoImpacto == null
-                        ? ''
-                        : irpfDeflactadoImpacto.deltaNeto === 0
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    {escenarioIrpfDeflactado && irpfDeflactadoImpacto != null ? (
+                      <p className="m-0 min-w-0 text-left text-xs uppercase leading-snug tracking-[0.02em] text-neutral-700 [font-family:var(--font-sans)]">
+                        {irpfDeflactadoImpacto.deltaNeto === 0
                           ? (
                               <>
                                 {`Si el IRPF se ajustara a la inflación en ${irpfDeflactadoImpacto.year},`}
@@ -427,7 +420,8 @@ export function LandingPage() {
                                   </span>
                                 </>
                               )}
-                    </p>
+                      </p>
+                    ) : null}
                     <button
                       type="button"
                       aria-pressed={escenarioIrpfDeflactado}

@@ -6,7 +6,7 @@ const footLinkClass = `${footTextClass} w-fit no-underline underline-offset-2 ho
 
 export function SiteFooter() {
   return (
-    <footer className="w-full">
+    <footer className="w-full pb-6 sm:pb-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="overflow-hidden rounded-2xl bg-neutral-100/90 px-6 py-10 sm:px-10 sm:py-12 lg:px-12 lg:py-14">
           <div className="grid gap-10 lg:grid-cols-2 lg:items-stretch lg:gap-8">
