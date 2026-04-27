@@ -26,6 +26,9 @@ export function SiteFooter() {
                   <Link to="/calculos" className={footLinkClass}>
                     Cálculos y fórmulas
                   </Link>
+                  <Link to="/legal" className={footLinkClass}>
+                    Aviso legal y privacidad
+                  </Link>
                   <a
                     href="https://x.com/imandresochoa"
                     target="_blank"

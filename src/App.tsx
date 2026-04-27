@@ -3,6 +3,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { AppShell } from './components/AppShell'
 import { QuickGrossProvider } from './context/QuickGrossContext'
 import { LandingPage } from './pages/LandingPage'
+import { LegalPage } from './pages/LegalPage'
 import { MetodologiaCalculosPage } from './pages/MetodologiaCalculosPage'
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/calculos" element={<MetodologiaCalculosPage />} />
+          <Route path="/legal" element={<LegalPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppShell>
