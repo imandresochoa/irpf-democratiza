@@ -34,7 +34,7 @@ function formatSignedEur(n: number): string {
     currency: 'EUR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-    useGrouping: 'always',
+    useGrouping: true,
   }).format(n)
 }
 
@@ -222,6 +222,19 @@ export function LandingPage() {
     return { netoNominalTotal, deltaPoderAdqRealVs2012, targetYear }
   }, [quickGrossAnnual, escenarioIrpfDeflactado, selectedComparadaYear])
 
+  const irpfDeflactadoImpacto = useMemo(() => {
+    if (quickGrossAnnual == null) return null
+    const year = selectedComparadaYear
+    const vigente = computeNominaAgregada(quickGrossAnnual, year, undefined, {
+      irpfMonetaryScaleFactor: 1,
+    })
+    const deflactado = computeNominaAgregada(quickGrossAnnual, year, undefined, {
+      irpfMonetaryScaleFactor: precios2012HastaAnio(year),
+    })
+    const deltaNeto = round2(deflactado.salarioNeto - vigente.salarioNeto)
+    return { year, deltaNeto }
+  }, [quickGrossAnnual, selectedComparadaYear])
+
   return (
     <div className="space-y-10">
       <section
@@ -240,9 +253,8 @@ export function LandingPage() {
             </div>
             <div className="flex w-full min-w-0 flex-col pt-0 lg:col-span-5 lg:pt-0.5">
               <p className="m-0 text-hero-lead [font-family:var(--font-serif)] text-neutral-800">
-                Prueba un bruto: neto, carga, poder adquisitivo, IRPF, cotizaciones, coste laboral y qué
-                parte del coste se queda en neto — todo con el IPC y la norma de cada año, como en la
-                hoja de cálculo de referencia.
+                Comprueba cómo ha cambiado tu salario desde 2012: cuánto cobras, cuánto se va en impuestos
+                y cómo ha cambiado tu poder adquisitivo.
               </p>
             </div>
           </div>
@@ -322,11 +334,11 @@ export function LandingPage() {
 
         <div className="mt-8 w-full shrink-0 sm:mt-10" aria-label="Evolución comparada">
           <div className="flex min-w-0 flex-col gap-5 rounded-xl bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-7">
-            <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-baseline lg:justify-between">
               <h2 className={comparadaTitleClass}>
                 Evolución comparada
               </h2>
-              <div className="flex shrink-0 items-end gap-6">
+              <div className="flex shrink-0 items-baseline gap-6">
                 <div className="group relative flex items-baseline gap-2">
                   <span className={`${comparadaMetricClass} text-neutral-900`}>
                     NETO {comparadaAbsSummary?.targetYear ?? selectedComparadaYear}:
@@ -368,28 +380,41 @@ export function LandingPage() {
                 nominal del año seleccionado y la variación del poder adquisitivo frente a 2012.
               </p>
             </div>
-            <MultiSeriesEvolutionChart
-              series={multiSeriesVs2012}
-              yFormat={(n) => formatPct(n, 1)}
-              yDomain={multiSeriesYDomain}
-              selectedYear={selectedComparadaYear}
-              onYearClick={(year) => setSelectedComparadaYear(year)}
-              topRightControl={
-                <button
-                  type="button"
-                  aria-pressed={escenarioIrpfDeflactado}
-                  onClick={() => setEscenarioIrpfDeflactado((v) => !v)}
-                  className={[
-                    toggleBtnBase,
-                    escenarioIrpfDeflactado
-                      ? '!border-neutral-800 !bg-neutral-900 !text-white'
-                      : '!border-neutral-300 !bg-neutral-100 !text-neutral-800 hover:!border-neutral-800 hover:!bg-neutral-900 hover:!text-white',
-                  ].join(' ')}
-                >
-                  Deflactar IRPF
-                </button>
-              }
-            />
+            <div className="relative">
+              <MultiSeriesEvolutionChart
+                series={multiSeriesVs2012}
+                yFormat={(n) => formatPct(n, 1)}
+                yDomain={multiSeriesYDomain}
+                selectedYear={selectedComparadaYear}
+                onYearClick={(year) => setSelectedComparadaYear(year)}
+                topRightControl={
+                  <button
+                    type="button"
+                    aria-pressed={escenarioIrpfDeflactado}
+                    onClick={() => setEscenarioIrpfDeflactado((v) => !v)}
+                    className={[
+                      toggleBtnBase,
+                      escenarioIrpfDeflactado
+                        ? '!border-neutral-800 !bg-neutral-900 !text-white'
+                        : '!border-neutral-300 !bg-neutral-100 !text-neutral-800 hover:!border-neutral-800 hover:!bg-neutral-900 hover:!text-white',
+                    ].join(' ')}
+                  >
+                    Deflactar IRPF
+                  </button>
+                }
+              />
+              {escenarioIrpfDeflactado && irpfDeflactadoImpacto != null ? (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="max-w-md rounded-full border border-neutral-300/80 bg-[color-mix(in_srgb,var(--color-surface)_92%,white)] px-4 py-2 text-center text-sm leading-snug text-neutral-800 shadow-sm [font-family:var(--font-sans)]">
+                    {irpfDeflactadoImpacto.deltaNeto === 0
+                      ? `Con IRPF deflactado en ${irpfDeflactadoImpacto.year}, tu neto anual sería igual.`
+                      : irpfDeflactadoImpacto.deltaNeto > 0
+                        ? `Con IRPF deflactado en ${irpfDeflactadoImpacto.year}, ganarías ${formatEur(irpfDeflactadoImpacto.deltaNeto, 0)} más neto al año.`
+                        : `Con IRPF deflactado en ${irpfDeflactadoImpacto.year}, ganarías ${formatEur(Math.abs(irpfDeflactadoImpacto.deltaNeto), 0)} menos neto al año.`}
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 
