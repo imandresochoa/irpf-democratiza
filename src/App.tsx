@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import { AppShell } from './components/AppShell'
 import { QuickGrossProvider } from './context/QuickGrossContext'
 import { LandingPage } from './pages/LandingPage'
@@ -14,6 +15,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppShell>
+      <Analytics />
     </QuickGrossProvider>
   )
 }
