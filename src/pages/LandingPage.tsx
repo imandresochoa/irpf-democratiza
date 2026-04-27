@@ -367,18 +367,20 @@ export function LandingPage() {
                 </div>
               </div>
             </div>
-            <div>
-              <p className="mt-2 m-0 max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
-                El IPC muestra cómo han subido los precios desde 2012. El neto y el IRPF se calculan con el
-                mismo salario bruto en todos los años y se expresan en{' '}
-                <strong className="font-semibold text-neutral-800">euros de 2012</strong>: si tu sueldo no
-                sube al ritmo del IPC, tu poder adquisitivo baja.
-              </p>
-              <p className="mt-3 m-0 max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
-                Al pasar el cursor verás el acumulado, la variación del año y la diferencia en euros de 2012.
-                Haz clic en una serie para resaltarla y en un año para fijarlo. Arriba se muestran el neto
-                nominal del año seleccionado y la variación del poder adquisitivo frente a 2012.
-              </p>
+            <div className="mt-2 flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+              <div className="min-w-0 max-w-xl">
+                <p className="m-0 text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
+                  El IPC muestra cómo han subido los precios desde 2012. El neto y el IRPF se calculan con el
+                  mismo salario bruto en todos los años y se expresan en{' '}
+                  <strong className="font-semibold text-neutral-800">euros de 2012</strong>: si tu sueldo no
+                  sube al ritmo del IPC, tu poder adquisitivo baja.
+                </p>
+                <p className="mt-3 m-0 text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
+                  Al pasar el cursor verás el acumulado, la variación del año y la diferencia en euros de 2012.
+                  Haz clic en una serie para resaltarla y en un año para fijarlo. Arriba se muestran el neto
+                  nominal del año seleccionado y la variación del poder adquisitivo frente a 2012.
+                </p>
+              </div>
             </div>
             <div className="relative">
               <MultiSeriesEvolutionChart
@@ -388,32 +390,60 @@ export function LandingPage() {
                 selectedYear={selectedComparadaYear}
                 onYearClick={(year) => setSelectedComparadaYear(year)}
                 topRightControl={
-                  <button
-                    type="button"
-                    aria-pressed={escenarioIrpfDeflactado}
-                    onClick={() => setEscenarioIrpfDeflactado((v) => !v)}
-                    className={[
-                      toggleBtnBase,
-                      escenarioIrpfDeflactado
-                        ? '!border-neutral-800 !bg-neutral-900 !text-white'
-                        : '!border-neutral-300 !bg-neutral-100 !text-neutral-800 hover:!border-neutral-800 hover:!bg-neutral-900 hover:!text-white',
-                    ].join(' ')}
-                  >
-                    Deflactar IRPF
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <p
+                      className={[
+                        'm-0 text-right text-xs uppercase leading-snug tracking-[0.02em] text-neutral-700 [font-family:var(--font-sans)] transition-opacity',
+                        escenarioIrpfDeflactado && irpfDeflactadoImpacto != null ? 'opacity-100' : 'opacity-0',
+                      ].join(' ')}
+                      aria-hidden={!escenarioIrpfDeflactado || irpfDeflactadoImpacto == null}
+                    >
+                      {irpfDeflactadoImpacto == null
+                        ? ''
+                        : irpfDeflactadoImpacto.deltaNeto === 0
+                          ? (
+                              <>
+                                {`Si el IRPF se ajustara a la inflación en ${irpfDeflactadoImpacto.year},`}
+                                <br />
+                                {'tu neto anual sería igual.'}
+                              </>
+                            )
+                          : irpfDeflactadoImpacto.deltaNeto > 0
+                            ? (
+                                <>
+                                  {`Si el IRPF se ajustara a la inflación en ${irpfDeflactadoImpacto.year},`}
+                                  <br />
+                                  <span className="underline decoration-[var(--color-focus)] decoration-2 underline-offset-2">
+                                    {`ganarías ${formatEur(irpfDeflactadoImpacto.deltaNeto, 0)} más al año.`}
+                                  </span>
+                                </>
+                              )
+                            : (
+                                <>
+                                  {`Si el IRPF se ajustara a la inflación en ${irpfDeflactadoImpacto.year},`}
+                                  <br />
+                                  <span className="underline decoration-[var(--color-focus)] decoration-2 underline-offset-2">
+                                    {`ganarías ${formatEur(Math.abs(irpfDeflactadoImpacto.deltaNeto), 0)} menos al año.`}
+                                  </span>
+                                </>
+                              )}
+                    </p>
+                    <button
+                      type="button"
+                      aria-pressed={escenarioIrpfDeflactado}
+                      onClick={() => setEscenarioIrpfDeflactado((v) => !v)}
+                      className={[
+                        toggleBtnBase,
+                        escenarioIrpfDeflactado
+                          ? '!border-neutral-800 !bg-neutral-900 !text-white'
+                          : '!border-neutral-300 !bg-neutral-100 !text-neutral-800 hover:!border-neutral-800 hover:!bg-neutral-900 hover:!text-white',
+                      ].join(' ')}
+                    >
+                      Deflactar IRPF
+                    </button>
+                  </div>
                 }
               />
-              {escenarioIrpfDeflactado && irpfDeflactadoImpacto != null ? (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <div className="max-w-md rounded-full border border-neutral-300/80 bg-[color-mix(in_srgb,var(--color-surface)_92%,white)] px-4 py-2 text-center text-sm leading-snug text-neutral-800 shadow-sm [font-family:var(--font-sans)]">
-                    {irpfDeflactadoImpacto.deltaNeto === 0
-                      ? `Con IRPF deflactado en ${irpfDeflactadoImpacto.year}, tu neto anual sería igual.`
-                      : irpfDeflactadoImpacto.deltaNeto > 0
-                        ? `Con IRPF deflactado en ${irpfDeflactadoImpacto.year}, ganarías ${formatEur(irpfDeflactadoImpacto.deltaNeto, 0)} más neto al año.`
-                        : `Con IRPF deflactado en ${irpfDeflactadoImpacto.year}, ganarías ${formatEur(Math.abs(irpfDeflactadoImpacto.deltaNeto), 0)} menos neto al año.`}
-                  </div>
-                </div>
-              ) : null}
             </div>
           </div>
         </div>
