@@ -7,6 +7,14 @@ import { getAtepEmpleadorRgl } from './grupoCotizacion'
 import { getYearParameters } from './parameters'
 import { defaultTaxpayerProfile, getReduccionMinimosLirpfBaseImponible, type TaxpayerProfile } from './taxpayerProfile'
 
+export interface ComputePayrollOptions {
+  /**
+   * Escala monetaria aplicada al bloque IRPF (umbrales y cuantías fijas).
+   * 1 = normativa vigente sin ajuste; >1 simula deflactación de la tarifa.
+   */
+  irpfMonetaryScaleFactor?: number
+}
+
 export function round2(n: number): number {
   return Math.round(n * 100) / 100
 }
@@ -79,8 +87,11 @@ export function computePayrollBreakdown(
   salarioBruto: number,
   year: TaxYear,
   profile: TaxpayerProfile = defaultTaxpayerProfile,
+  opts: ComputePayrollOptions = {},
 ): PayrollBreakdown {
   const p = getYearParameters(year)
+  const kRaw = opts.irpfMonetaryScaleFactor ?? 1
+  const k = Number.isFinite(kRaw) && kRaw > 0 ? kRaw : 1
   const baseCotizacion = Math.min(salarioBruto, p.baseMax)
   const excesoBase = Math.max(0, salarioBruto - p.baseMax)
 
@@ -97,32 +108,36 @@ export function computePayrollBreakdown(
 
   const costeLaboral = salarioBruto + cotEmpresa
   const rendimientoPrevio = salarioBruto - cotTrabajador
-  const redTrabajo = p.reduccionTrabajo(rendimientoPrevio)
-  const rendimientoNeto = Math.max(0, rendimientoPrevio - p.gastosFijos)
+  const redTrabajo = k === 1 ? p.reduccionTrabajo(rendimientoPrevio) : k * p.reduccionTrabajo(rendimientoPrevio / k)
+  const gastosFijos = p.gastosFijos * k
+  const rendimientoNeto = Math.max(0, rendimientoPrevio - gastosFijos)
   const baseImponible = Math.max(0, rendimientoNeto - redTrabajo)
 
-  const { reduccion: reduccionMinimosLirpf } = getReduccionMinimosLirpfBaseImponible(
-    year,
-    profile,
-    baseImponible,
-  )
+  const reduccionMinimosLirpf =
+    k === 1
+      ? getReduccionMinimosLirpfBaseImponible(year, profile, baseImponible).reduccion
+      : k * getReduccionMinimosLirpfBaseImponible(year, profile, baseImponible / k).reduccion
   const baseSujetaTramos = Math.max(0, baseImponible - reduccionMinimosLirpf)
+  const tramosIrpfEscalados: YearTaxParams['tramosIrpf'] =
+    k === 1
+      ? p.tramosIrpf
+      : (p.tramosIrpf.map(([lim, tipo]) => [lim * k, tipo] as const) as YearTaxParams['tramosIrpf'])
 
   const { details: cuotasEstRaw, cuotaTotal: cuotaIntegraEstatal } = computeBracketQuotas(
     baseSujetaTramos,
-    p.tramosIrpf,
+    tramosIrpfEscalados,
   )
   const pesoAut = getPesoEscalaAutonomicaAproximada(profile.comunidadAutonoma, year)
-  const trAut = tramosAutonomicosAproximados(p.tramosIrpf, pesoAut)
+  const trAut = tramosAutonomicosAproximados(tramosIrpfEscalados, pesoAut)
   const { details: cuotasAutRaw, cuotaTotal: cuotaIntegraAutonomica } = computeBracketQuotas(
     baseSujetaTramos,
     trAut,
   )
   const cuotaIntegra = cuotaIntegraEstatal + cuotaIntegraAutonomica
   const cuotaTeorica = Math.max(0, cuotaIntegra)
-  const dedSmi = p.deduccionSmi(salarioBruto)
+  const dedSmi = k === 1 ? p.deduccionSmi(salarioBruto) : k * p.deduccionSmi(salarioBruto / k)
   const cuotaTrasSmi = Math.max(0, cuotaTeorica - dedSmi)
-  const limiteRetencion = Math.max(0, (salarioBruto - p.minimoExento) * 0.43)
+  const limiteRetencion = Math.max(0, (salarioBruto - p.minimoExento * k) * 0.43)
   const irpfFinal = Math.min(cuotaTrasSmi, limiteRetencion)
   const salarioNeto = salarioBruto - cotTrabajador - irpfFinal
 
@@ -146,7 +161,7 @@ export function computePayrollBreakdown(
     cotTrabajador: round2(cotTrabajador),
     costeLaboral: round2(costeLaboral),
     rendimientoPrevio: round2(rendimientoPrevio),
-    gastosFijos: p.gastosFijos,
+    gastosFijos: round2(gastosFijos),
     reduccionTrabajo: round2(redTrabajo),
     rendimientoNeto: round2(rendimientoNeto),
     baseImponible: round2(baseImponible),
@@ -171,6 +186,7 @@ export function computeNominaAgregada(
   bruto: number,
   year: TaxYear,
   profile: TaxpayerProfile = defaultTaxpayerProfile,
+  opts: ComputePayrollOptions = {},
 ): {
   costeLaboral: number
   cotEmpresa: number
@@ -178,7 +194,7 @@ export function computeNominaAgregada(
   irpfFinal: number
   salarioNeto: number
 } {
-  const b = computePayrollBreakdown(bruto, year, profile)
+  const b = computePayrollBreakdown(bruto, year, profile, opts)
   return {
     costeLaboral: b.costeLaboral,
     cotEmpresa: b.cotEmpresa,

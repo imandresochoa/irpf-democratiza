@@ -68,6 +68,17 @@ describe('computePayrollBreakdown', () => {
     expect(agg.irpfFinal).toBe(full.irpfFinal)
   })
 
+  it('escenario IRPF deflactado (k>1) reduce IRPF y mejora neto a mismo bruto', () => {
+    const gross = 50_000
+    const year = 2026
+    const vigente = computeNominaAgregada(gross, year)
+    const deflactado = computeNominaAgregada(gross, year, defaultTaxpayerProfile, {
+      irpfMonetaryScaleFactor: precios2012HastaAnio(year),
+    })
+    expect(deflactado.irpfFinal).toBeLessThanOrEqual(vigente.irpfFinal)
+    expect(deflactado.salarioNeto).toBeGreaterThanOrEqual(vigente.salarioNeto)
+  })
+
   it('perfil con hijos aplica mayor reducción de mínimos y menor IRPF que sin hijos', () => {
     const gross = 45_000
     const year = 2024

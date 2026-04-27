@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   brutoNominalAeur2012Comparables,
   computeInflationComparisonRow,
@@ -22,9 +22,12 @@ import { formatEur, formatPct, parseEurInputToNumber } from '../lib/format'
 /** Caja de la tabla única año a año (nómina / coste). */
 const kComparisonTableCardClass =
   'flex min-w-0 flex-col gap-5 rounded-xl border border-neutral-200/70 bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-6'
+const toggleBtnBase =
+  'inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]'
 
 export function LandingPage() {
   const { quickGrossInput, setQuickGrossInput, quickCalcYear, calculatorSectionRef } = useQuickGross()
+  const [escenarioIrpfDeflactado, setEscenarioIrpfDeflactado] = useState(false)
 
   const quickGrossAnnual = useMemo(() => {
     const value = parseEurInputToNumber(quickGrossInput)
@@ -84,9 +87,8 @@ export function LandingPage() {
 
   /**
    * Gráfico comparado: IPC acumulado; neto e IRPF con el **mismo bruto nominal** en cada
-   * ejercicio (el de la calculadora), deflactados a € constantes 2012 → % vs 2012. Así se
-   * ve la variación real si el nominal no sube con los precios (frente al experimento de
-   * bruto en € 2012 fijos del resto de la página).
+   * ejercicio (el de la calculadora). El toggle aplica un contrafactual de IRPF deflactado por IPC
+   * (escala monetaria de la tarifa indexada) y afecta tanto al neto real como al IRPF.
    */
   const multiSeriesVs2012 = useMemo<MultiSeries[]>(() => {
     const ipcPoints = TAX_YEARS.map((year) => ({
@@ -103,23 +105,25 @@ export function LandingPage() {
 
     const g = quickGrossAnnual
     const mRef = precios2012HastaAnio(quickCalcYear)
+    const nominaEscenario = (year: TaxYear) =>
+      computeNominaAgregada(g, year, undefined, {
+        irpfMonetaryScaleFactor: escenarioIrpfDeflactado ? precios2012HastaAnio(year) : 1,
+      })
     const netoEur2012 = (year: TaxYear) => {
-      const nom = computeNominaAgregada(g, year)
+      const nom = nominaEscenario(year)
       const f = precios2012HastaAnio(year)
       return round2(nom.salarioNeto / f)
     }
-    const irpfEur2012 = (year: TaxYear) => {
-      const nom = computeNominaAgregada(g, year)
-      const f = precios2012HastaAnio(year)
-      return round2(nom.irpfFinal / f)
-    }
+    const irpfValue = (year: TaxYear) => round2(nominaEscenario(year).irpfFinal / precios2012HastaAnio(year))
     const baseNet = netoEur2012(2012)
-    const baseIrpf = irpfEur2012(2012)
+    const baseIrpf = irpfValue(2012)
 
     if (baseNet > 0) {
       out.push({
         id: 'poder',
-        label: 'Poder adquisitivo (neto real)',
+        label: escenarioIrpfDeflactado
+          ? 'Poder adquisitivo (neto real, IRPF deflactado)'
+          : 'Poder adquisitivo (neto real, IRPF vigente)',
         variant: 'green',
         points: TAX_YEARS.map((year, i) => {
           const net = netoEur2012(year)
@@ -142,12 +146,14 @@ export function LandingPage() {
     if (baseIrpf > 0) {
       out.push({
         id: 'irpf',
-        label: 'IRPF retenido',
+        label: escenarioIrpfDeflactado
+          ? 'IRPF retenido (escenario deflactado, € 2012)'
+          : 'IRPF retenido (vigente, € 2012)',
         variant: 'lavender',
         points: TAX_YEARS.map((year, i) => {
-          const irpf = irpfEur2012(year)
+          const irpf = irpfValue(year)
           const prevYear = i > 0 ? TAX_YEARS[i - 1]! : null
-          const prevIrpf = prevYear != null ? irpfEur2012(prevYear) : null
+          const prevIrpf = prevYear != null ? irpfValue(prevYear) : null
           const yoy =
             prevIrpf != null && prevIrpf > 0 && year !== 2012
               ? ((irpf / prevIrpf - 1) * 100)
@@ -165,7 +171,7 @@ export function LandingPage() {
       })
     }
     return out
-  }, [quickGrossAnnual, quickCalcYear])
+  }, [quickGrossAnnual, quickCalcYear, escenarioIrpfDeflactado])
 
   return (
     <div className="space-y-10">
@@ -286,10 +292,27 @@ export function LandingPage() {
                 <strong className="font-semibold text-neutral-800">mismo bruto nominal</strong> que has
                 escrito en todos los ejercicios; cada punto es el % respecto a 2012 al pasar la nómina a{' '}
                 <strong className="font-semibold text-neutral-800">€ constantes 2012</strong> (si el nominal
-                no sube como el IPC, el neto real cae). Al pasar el cursor, leyenda y recuadro muestran
-                acumulado, intra-anual y la diferencia en euros (constantes 2012 y equivalente nominal del año
-                de la calculadora). Clic en una serie para resaltarla.
+                no sube como el IPC, el neto real cae). El toggle aplica un escenario contrafactual donde el
+                IRPF se deflacta por IPC y por tanto cambia tanto la serie de IRPF como la de poder
+                adquisitivo. Al pasar el cursor, leyenda y recuadro muestran acumulado, intra-anual y la
+                diferencia en euros (constantes 2012 y equivalente nominal del año de la calculadora). Clic
+                en una serie para resaltarla.
               </p>
+            </div>
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                aria-pressed={escenarioIrpfDeflactado}
+                onClick={() => setEscenarioIrpfDeflactado((v) => !v)}
+                className={[
+                  toggleBtnBase,
+                  escenarioIrpfDeflactado
+                    ? 'border-neutral-800 bg-neutral-900 text-white'
+                    : 'border-neutral-300 bg-white/70 text-neutral-800 hover:bg-white',
+                ].join(' ')}
+              >
+                Escenario IRPF deflactado {escenarioIrpfDeflactado ? '(ON)' : '(OFF)'}
+              </button>
             </div>
             <MultiSeriesEvolutionChart
               series={multiSeriesVs2012}
