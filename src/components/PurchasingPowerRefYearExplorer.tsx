@@ -196,9 +196,13 @@ export function PurchasingPowerRefYearExplorer({
           <p className="m-0 mt-4 text-base leading-relaxed text-neutral-800 [font-family:var(--font-serif)]">
             {resumenPoderAdquisitivo.modo === 'pasado' ? (
               <>
-                Con tu sueldo actual, tienes el mismo poder de compra que alguien que ganaba{' '}
-                <strong className="font-semibold text-neutral-900">{formatEur(netInRef, 0)}</strong> netos en{' '}
-                {resumenPoderAdquisitivo.refYear}.
+                Con tu sueldo actual,{' '}
+                <span className="underline decoration-dashed decoration-2 [text-decoration-color:var(--color-focus)] underline-offset-[0.22em]">
+                  tienes el mismo poder de compra que alguien que ganaba{' '}
+                  <strong className="font-semibold text-neutral-900">{formatEur(netInRef, 0)}</strong> netos en{' '}
+                  {resumenPoderAdquisitivo.refYear}
+                </span>
+                .
               </>
             ) : (
               <>

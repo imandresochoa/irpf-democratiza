@@ -27,6 +27,10 @@ const toggleBtnBase =
 const comparadaTitleClass =
   'm-0 text-2xl font-semibold leading-tight text-neutral-900 sm:text-3xl'
 const comparadaMetricClass = 'm-0 text-sm font-medium leading-tight'
+const sectionTitleClass =
+  'm-0 min-w-0 text-2xl font-semibold leading-tight text-neutral-900 [font-family:var(--font-serif)] sm:text-3xl'
+const sectionDescriptionClass =
+  'm-0 max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]'
 
 function formatSignedEur(n: number): string {
   return new Intl.NumberFormat('es-ES', {
@@ -453,13 +457,9 @@ export function LandingPage() {
         <div className="h-8 w-full shrink-0 sm:h-10" aria-hidden="true" />
         <div className="w-full shrink-0" aria-label="Coste de vida por ejercicio">
           <div className={kComparisonTableCardClass}>
-            <div className="min-w-0">
-              <h2
-                className="m-0 text-xl font-semibold text-neutral-900 [font-family:var(--font-serif)] sm:text-2xl"
-              >
-                Coste de vida
-              </h2>
-              <p className="mt-2 m-0 max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
+            <div className="flex min-w-0 flex-col gap-2">
+              <h2 className={sectionTitleClass}>Coste de vida</h2>
+              <p className={sectionDescriptionClass}>
                 Comprueba qué porcentaje de tu sueldo dedicas a la compra, alquiler, luz y gas y
                 vivienda, y como ha evolucionado con los años. Son estimaciones basadas en datos
                 oficiales.
