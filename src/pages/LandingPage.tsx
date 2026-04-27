@@ -223,8 +223,9 @@ export function LandingPage() {
         irpfMonetaryScaleFactor: escenarioIrpfDeflactado ? precios2012HastaAnio(year) : 1,
       })
     const netoNominalTotal = round2(nomina(targetYear).salarioNeto)
-    const irpfNominalTotal = round2(nomina(targetYear).irpfFinal)
-    return { netoNominalTotal, irpfNominalTotal, targetYear }
+    const netoReal = (year: TaxYear) => round2(nomina(year).salarioNeto / precios2012HastaAnio(year))
+    const deltaPoderAdqRealVs2012 = round2(netoReal(targetYear) - netoReal(2012))
+    return { netoNominalTotal, deltaPoderAdqRealVs2012, targetYear }
   }, [quickGrossAnnual, escenarioIrpfDeflactado, selectedComparadaYear])
 
   return (
@@ -342,19 +343,6 @@ export function LandingPage() {
               <div className="flex shrink-0 items-end gap-6">
                 <div className="group relative flex items-baseline gap-2">
                   <span className={`${comparadaMetricClass} text-neutral-900`}>
-                    IRPF:
-                  </span>
-                  <span className={`${comparadaMetricClass} text-neutral-900`}>
-                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.irpfNominalTotal) : '—'}
-                  </span>
-                  <span className="pointer-events-none absolute right-0 top-full z-10 mt-1 hidden max-w-xs rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-normal leading-snug text-neutral-700 shadow-sm group-hover:block group-focus-within:block">
-                    {comparadaAbsSummary == null
-                      ? 'Total anual de IRPF nominal con tu bruto actual.'
-                      : `Total anual de IRPF nominal en ${comparadaAbsSummary.targetYear}: ${formatSignedEur(comparadaAbsSummary.irpfNominalTotal)}.`}
-                  </span>
-                </div>
-                <div className="group relative flex items-baseline gap-2">
-                  <span className={`${comparadaMetricClass} text-neutral-900`}>
                     NETO {comparadaAbsSummary?.targetYear ?? selectedComparadaYear}:
                   </span>
                   <span className={`${comparadaMetricClass} text-neutral-900`}>
@@ -366,17 +354,32 @@ export function LandingPage() {
                       : `Total anual de salario neto nominal en ${comparadaAbsSummary.targetYear}: ${formatSignedEur(comparadaAbsSummary.netoNominalTotal)}.`}
                   </span>
                 </div>
+                <div className="group relative flex items-baseline gap-2">
+                  <span className={`${comparadaMetricClass} text-neutral-900`}>
+                    VARIACIÓN PODER ADQUISITIVO:
+                  </span>
+                  <span className={`${comparadaMetricClass} text-neutral-900`}>
+                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.deltaPoderAdqRealVs2012) : '—'}
+                  </span>
+                  <span className="pointer-events-none absolute right-0 top-full z-10 mt-1 hidden max-w-xs rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-normal leading-snug text-neutral-700 shadow-sm group-hover:block group-focus-within:block">
+                    {comparadaAbsSummary == null
+                      ? 'Variación anual del poder adquisitivo real frente a 2012 (euros de 2012).'
+                      : `Variación anual del poder adquisitivo real en ${comparadaAbsSummary.targetYear} frente a 2012: ${formatSignedEur(comparadaAbsSummary.deltaPoderAdqRealVs2012)} (euros de 2012).`}
+                  </span>
+                </div>
               </div>
             </div>
             <div>
               <p className="mt-2 m-0 max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
-                IPC acumulado (nivel de precios). Neto e IRPF usan el{' '}
-                <strong className="font-semibold text-neutral-800">mismo bruto nominal</strong> que has
-                escrito en todos los ejercicios; cada punto es el % respecto a 2012 al pasar la nómina a{' '}
-                <strong className="font-semibold text-neutral-800">€ constantes 2012</strong> (si el nominal
-                no sube como el IPC, el neto real cae). Al pasar el cursor, leyenda y recuadro muestran
-                acumulado, intra-anual y la diferencia en euros constantes 2012. Clic en una serie para
-                resaltarla.
+                El IPC muestra cómo han subido los precios desde 2012. El neto y el IRPF se calculan con el
+                mismo salario bruto en todos los años y se expresan en{' '}
+                <strong className="font-semibold text-neutral-800">euros de 2012</strong>: si tu sueldo no
+                sube al ritmo del IPC, tu poder adquisitivo baja.
+              </p>
+              <p className="mt-3 m-0 max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
+                Al pasar el cursor verás el acumulado, la variación del año y la diferencia en euros de 2012.
+                Haz clic en una serie para resaltarla y en un año para fijarlo. Arriba se muestran el neto
+                nominal del año seleccionado y la variación del poder adquisitivo frente a 2012.
               </p>
             </div>
             <MultiSeriesEvolutionChart
