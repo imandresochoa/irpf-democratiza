@@ -253,7 +253,7 @@ export function LandingPage() {
             </div>
             <div className="flex w-full min-w-0 flex-col pt-0 lg:col-span-5 lg:pt-0.5">
               <p className="m-0 text-hero-lead [font-family:var(--font-serif)] text-neutral-800">
-                Comprueba cómo ha cambiado tu salario desde 2012: cuánto cobras, cuánto se va en impuestos
+                Comprueba cómo ha cambiado tu salario desde 2012: cuánto cobras, cuánto pagas en impuestos
                 y cómo ha cambiado tu poder adquisitivo.
               </p>
             </div>
