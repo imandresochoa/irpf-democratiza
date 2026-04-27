@@ -24,8 +24,7 @@ export function MetodologiaCalculosPage() {
         Cálculos y fórmulas
       </h1>
       <p className={`mt-4 m-0 ${prose}`}>
-        Resumen de cómo se calculan las cifras de la aplicación y en qué archivos está la lógica. La
-        referencia detallada sigue en el repositorio en{' '}
+        Fórmulas directas de cada bloque de la app. La referencia detallada sigue en{' '}
         <code className={codePath}>docs/CALCULOS_FUENTE_DE_VERDAD.md</code>.
       </p>
 
@@ -108,35 +107,40 @@ export function MetodologiaCalculosPage() {
         </table>
       </div>
 
-      <h2 className={h2}>Fórmulas usadas con frecuencia</h2>
+      <h2 className={h2}>Fórmulas (resumen)</h2>
       <h3 className={h3}>Bruto nominal → € constantes 2012</h3>
       <p className={`m-0 ${prose}`}>
-        Dado un bruto nominal <em>G</em> del año <em>t</em> y el factor de precios acumulado desde 2012 hasta{' '}
-        <em>t</em>, <code className={codePath}>f = precios2012HastaAnio(t)</code>: el bruto en € 2012
-        comparables es <strong className="font-semibold text-neutral-900">G / f</strong>.
+        <strong className="font-semibold text-neutral-900">G<sub>real,2012</sub> = G<sub>nominal,t</sub> / f<sub>2012→t</sub></strong>, con{' '}
+        <code className={codePath}>f = precios2012HastaAnio(t)</code>.
       </p>
       <h3 className={h3}>Neto nominal → € constantes 2012</h3>
       <p className={`m-0 ${prose}`}>
-        Con el mismo factor <em>f</em> del año de la nómina:{' '}
-        <strong className="font-semibold text-neutral-900">N<sub>€2012</sub> = N<sub>nominal</sub> / f</strong>.
+        <strong className="font-semibold text-neutral-900">N<sub>real,2012</sub> = N<sub>nominal,t</sub> / f<sub>2012→t</sub></strong>.
+      </p>
+      <h3 className={h3}>IRPF sobre bruto (%)</h3>
+      <p className={`m-0 ${prose}`}>
+        <strong className="font-semibold text-neutral-900">%IRPF<sub>t</sub> = 100 · IRPF<sub>t</sub> / Bruto<sub>t</sub></strong>.
+      </p>
+      <h3 className={h3}>Variación de poder adquisitivo vs 2012</h3>
+      <p className={`m-0 ${prose}`}>
+        <strong className="font-semibold text-neutral-900">
+          ΔPoder<sub>t</sub> = Neto<sub>real,2012,t</sub> − Neto<sub>real,2012,2012</sub>
+        </strong>.
       </p>
       <h3 className={h3}>IPC acumulado desde 2012</h3>
       <p className={`m-0 ${prose}`}>
-        Para cada año <em>k</em> desde 2013, se encadenan variaciones diciembre–diciembre{' '}
-        <code className={codePath}>IPC_ANUAL_DIC[k]</code>: el factor acumulado es el producto de{' '}
-        <strong className="font-semibold text-neutral-900">(1 + IPC<sub>k</sub>)</strong>. El nivel relativo
-        P<sub>t</sub>/P<sub>2012</sub> es ese producto hasta <em>t</em>; el gráfico “IPC” muestra a menudo{' '}
-        <strong className="font-semibold text-neutral-900">(P<sub>t</sub>/P<sub>2012</sub> − 1) × 100</strong>{' '}
-        en %.
+        <strong className="font-semibold text-neutral-900">
+          f<sub>2012→t</sub> = ∏<sub>k=2013..t</sub>(1 + IPC<sub>k</sub>)
+        </strong>{' '}
+        y la serie IPC del gráfico es{' '}
+        <strong className="font-semibold text-neutral-900">(f<sub>2012→t</sub> − 1) · 100</strong>.
       </p>
       <h3 className={h3}>Gráfico “Evolución comparada” (neto e IRPF)</h3>
       <p className={`m-0 ${prose}`}>
-        Con el <strong className="font-semibold text-neutral-900">mismo bruto nominal</strong> en cada
-        ejercicio, se calcula la nómina del año, se deflacta neto (e IRPF) a € 2012 dividiendo por{' '}
-        <code className={codePath}>precios2012HastaAnio(año)</code>, y se muestra el % respecto a 2012. Los
-        importes en euros del bloque superior se muestran en términos reales (euros constantes 2012): por
-        defecto usan el año de la calculadora y, al hacer clic en un punto del gráfico, usan ese año
-        seleccionado.
+        Neto: <strong className="font-semibold text-neutral-900">(N<sub>real,2012,t</sub>/N<sub>real,2012,2012</sub> − 1) · 100</strong>.<br />
+        IRPF: <strong className="font-semibold text-neutral-900">100 · IRPF<sub>t</sub> / Bruto<sub>t</sub></strong>.<br />
+        Arriba: <strong className="font-semibold text-neutral-900">Neto nominal del año seleccionado</strong> y{' '}
+        <strong className="font-semibold text-neutral-900">ΔPoder vs 2012</strong>.
       </p>
     </article>
   )
