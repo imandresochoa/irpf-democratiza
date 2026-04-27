@@ -41,7 +41,7 @@ function formatSignedEur(n: number): string {
 export function LandingPage() {
   const { quickGrossInput, setQuickGrossInput, quickCalcYear, calculatorSectionRef } = useQuickGross()
   const [escenarioIrpfDeflactado, setEscenarioIrpfDeflactado] = useState(false)
-  const [selectedComparadaYear, setSelectedComparadaYear] = useState<TaxYear | null>(null)
+  const [selectedComparadaYear, setSelectedComparadaYear] = useState<TaxYear>(quickCalcYear)
 
   const quickGrossAnnual = useMemo(() => {
     const value = parseEurInputToNumber(quickGrossInput)
@@ -216,18 +216,16 @@ export function LandingPage() {
 
   const comparadaAbsSummary = useMemo(() => {
     if (quickGrossAnnual == null) return null
-    const targetYear = selectedComparadaYear ?? quickCalcYear
+    const targetYear = selectedComparadaYear
     const g = quickGrossAnnual
     const nomina = (year: TaxYear) =>
       computeNominaAgregada(g, year, undefined, {
         irpfMonetaryScaleFactor: escenarioIrpfDeflactado ? precios2012HastaAnio(year) : 1,
       })
-    const netoEur2012 = (year: TaxYear) => round2(nomina(year).salarioNeto / precios2012HastaAnio(year))
-    const irpfEur2012 = (year: TaxYear) => round2(nomina(year).irpfFinal / precios2012HastaAnio(year))
-    const netoRealTotal = netoEur2012(targetYear)
-    const irpfRealTotal = irpfEur2012(targetYear)
-    return { netoRealTotal, irpfRealTotal, targetYear }
-  }, [quickGrossAnnual, quickCalcYear, escenarioIrpfDeflactado, selectedComparadaYear])
+    const netoNominalTotal = round2(nomina(targetYear).salarioNeto)
+    const irpfNominalTotal = round2(nomina(targetYear).irpfFinal)
+    return { netoNominalTotal, irpfNominalTotal, targetYear }
+  }, [quickGrossAnnual, escenarioIrpfDeflactado, selectedComparadaYear])
 
   return (
     <div className="space-y-10">
@@ -347,25 +345,25 @@ export function LandingPage() {
                     IRPF:
                   </span>
                   <span className={`${comparadaMetricClass} text-neutral-900`}>
-                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.irpfRealTotal) : '—'}
+                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.irpfNominalTotal) : '—'}
                   </span>
                   <span className="pointer-events-none absolute right-0 top-full z-10 mt-1 hidden max-w-xs rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-normal leading-snug text-neutral-700 shadow-sm group-hover:block group-focus-within:block">
                     {comparadaAbsSummary == null
-                      ? 'Total anual de IRPF real con tu bruto actual (euros constantes 2012).'
-                      : `Total anual de IRPF real retenido en ${comparadaAbsSummary.targetYear}: ${formatSignedEur(comparadaAbsSummary.irpfRealTotal)} (euros constantes 2012).`}
+                      ? 'Total anual de IRPF nominal con tu bruto actual.'
+                      : `Total anual de IRPF nominal en ${comparadaAbsSummary.targetYear}: ${formatSignedEur(comparadaAbsSummary.irpfNominalTotal)}.`}
                   </span>
                 </div>
                 <div className="group relative flex items-baseline gap-2">
                   <span className={`${comparadaMetricClass} text-neutral-900`}>
-                    PODER ADQUISITIVO:
+                    NETO {comparadaAbsSummary?.targetYear ?? selectedComparadaYear}:
                   </span>
                   <span className={`${comparadaMetricClass} text-neutral-900`}>
-                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.netoRealTotal) : '—'}
+                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.netoNominalTotal) : '—'}
                   </span>
                   <span className="pointer-events-none absolute right-0 top-full z-10 mt-1 hidden max-w-xs rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-normal leading-snug text-neutral-700 shadow-sm group-hover:block group-focus-within:block">
                     {comparadaAbsSummary == null
-                      ? 'Total anual de neto real con tu bruto actual (euros constantes 2012).'
-                      : `Total anual de neto real en ${comparadaAbsSummary.targetYear}: ${formatSignedEur(comparadaAbsSummary.netoRealTotal)} (euros constantes 2012).`}
+                      ? 'Total anual de salario neto nominal con tu bruto actual.'
+                      : `Total anual de salario neto nominal en ${comparadaAbsSummary.targetYear}: ${formatSignedEur(comparadaAbsSummary.netoNominalTotal)}.`}
                   </span>
                 </div>
               </div>
@@ -385,6 +383,7 @@ export function LandingPage() {
               series={multiSeriesVs2012}
               yFormat={(n) => formatPct(n, 1)}
               yDomain={multiSeriesYDomain}
+              selectedYear={selectedComparadaYear}
               onYearClick={(year) => setSelectedComparadaYear(year)}
               topRightControl={
                 <button

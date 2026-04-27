@@ -1,4 +1,4 @@
-import { useCallback, useId, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { TaxYear } from '../domain/tax'
 import { formatEur, formatPct, formatSignedPctCompact } from '../lib/format'
 
@@ -60,6 +60,8 @@ type MultiSeriesEvolutionChartProps = {
   topRightControl?: ReactNode
   /** Notifica el año más cercano cuando se hace clic en el área del plot. */
   onYearClick?: (year: TaxYear) => void
+  /** Año actualmente seleccionado en el gráfico (si existe). */
+  selectedYear?: TaxYear | null
 }
 
 const variantStyles: Record<ChartVariant, { fillVar: string; lineVar: string }> = {
@@ -138,10 +140,13 @@ export function MultiSeriesEvolutionChart({
   yDomain,
   topRightControl,
   onYearClick,
+  selectedYear = null,
 }: MultiSeriesEvolutionChartProps) {
   const gradId = useId()
   const labelledById = useId()
   const [focusedId, setFocusedId] = useState<string | null>(null)
+  const plotRef = useRef<HTMLDivElement | null>(null)
+  const [plotSize, setPlotSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 })
   const [hover, setHover] = useState<{
     index: number
     xPx: number
@@ -254,6 +259,31 @@ export function MultiSeriesEvolutionChart({
     return { left, top, transform }
   }, [hover])
 
+  useEffect(() => {
+    const el = plotRef.current
+    if (el == null) return
+    const update = () => {
+      const r = el.getBoundingClientRect()
+      setPlotSize({ w: r.width, h: r.height })
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  /**
+   * Con preserveAspectRatio="none", X e Y escalan distinto.
+   * Ajustamos ry para que el marcador se vea circular en pantalla.
+   */
+  const markerRyFactor = useMemo(() => {
+    if (plotSize.w <= 0 || plotSize.h <= 0) return 1
+    const scaleX = plotSize.w / VIEW.w
+    const scaleY = plotSize.h / VIEW.h
+    if (scaleY <= 0) return 1
+    return scaleX / scaleY
+  }, [plotSize])
+
   if (usableSeries.length === 0) {
     return (
       <div
@@ -267,8 +297,8 @@ export function MultiSeriesEvolutionChart({
     )
   }
 
-  /** Etiquetas X cada 2 años (incluye primero y último). */
-  const xTicks = years.filter((y, i) => i === 0 || i === years.length - 1 || y % 2 === 0)
+  /** Etiquetas X: mostrar todos los años disponibles. */
+  const xTicks = years
 
   return (
     <div className={['flex w-full min-w-0 flex-col gap-3 sm:gap-4', className ?? ''].join(' ')}>
@@ -356,6 +386,7 @@ export function MultiSeriesEvolutionChart({
             })}
           </div>
           <div
+            ref={plotRef}
             className="relative min-w-0 flex-1 select-none"
             onPointerEnter={(e) => onMove(e.clientX, e.clientY, e.currentTarget)}
             onPointerMove={(e) => onMove(e.clientX, e.clientY, e.currentTarget)}
@@ -418,10 +449,11 @@ export function MultiSeriesEvolutionChart({
               y1={0}
               x2={(hover.index / (years.length - 1)) * 100}
               y2={VIEW.h}
-              stroke="var(--color-neutral-400, rgb(148 146 142))"
-              strokeWidth={0.18}
-              strokeOpacity={0.55}
+              stroke="var(--color-neutral-700, rgb(86 86 86))"
+              strokeWidth={0.35}
+              strokeOpacity={0.85}
               vectorEffect="non-scaling-stroke"
+              strokeDasharray="2 1.5"
             />
           ) : null}
 
@@ -454,13 +486,14 @@ export function MultiSeriesEvolutionChart({
                   strokeLinecap="round"
                 />
                 {hp ? (
-                  <circle
+                  <ellipse
                     cx={hp.x}
                     cy={hp.y}
-                    r={isFocused ? 1.0 : 0.78}
-                    fill="var(--color-surface, rgb(255 255 255))"
+                    rx={isFocused ? 0.52 : 0.4}
+                    ry={(isFocused ? 0.52 : 0.4) * markerRyFactor}
+                    fill={colors.lineVar}
                     stroke={colors.lineVar}
-                    strokeWidth={isFocused ? 0.5 : 0.42}
+                    strokeWidth={isFocused ? 0.18 : 0.14}
                     vectorEffect="non-scaling-stroke"
                     className="pointer-events-none"
                   />
@@ -489,8 +522,19 @@ export function MultiSeriesEvolutionChart({
         {baselineSeries != null ? (
           <div className="pointer-events-none mt-1 flex w-full min-w-0 justify-between text-[11px] font-medium tabular-nums text-neutral-500 [font-family:var(--font-sans)]">
             {xTicks.map((y) => (
-              <span key={y} className={y === hoveredYear ? 'text-neutral-900' : ''}>
-                {y}
+              <span key={y} className="inline-flex items-center">
+                <span
+                  className={[
+                    'inline-flex items-center rounded-full px-2 py-0.5 transition-colors',
+                    y === selectedYear
+                      ? 'bg-neutral-900 text-white'
+                      : y === hoveredYear
+                        ? 'bg-transparent text-neutral-900'
+                        : 'bg-transparent text-neutral-500',
+                  ].join(' ')}
+                >
+                  {y}
+                </span>
               </span>
             ))}
           </div>
@@ -504,6 +548,9 @@ export function MultiSeriesEvolutionChart({
               >
                 <p className="m-0 text-base font-semibold leading-none tracking-[-0.02em] text-neutral-900">
                   {hoveredYear}
+                </p>
+                <p className="m-0 mt-1 text-[11px] leading-snug text-neutral-600">
+                  Clic para fijar este año en los totales.
                 </p>
                 <ul className="m-0 mt-2 flex list-none flex-col gap-2 p-0">
                   {usableSeries.map((s) => {
