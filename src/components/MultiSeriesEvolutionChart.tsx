@@ -162,7 +162,11 @@ export function MultiSeriesEvolutionChart({
 
   /** Ordena: enfocada al final (encima del resto). */
   const renderOrder = useMemo(() => {
-    if (focusedId == null) return usableSeries
+    if (focusedId == null) {
+      const green = usableSeries.filter((s) => s.id === 'poder')
+      const rest = usableSeries.filter((s) => s.id !== 'poder')
+      return [...rest, ...green]
+    }
     return [...usableSeries.filter((s) => s.id !== focusedId), ...usableSeries.filter((s) => s.id === focusedId)]
   }, [usableSeries, focusedId])
 
@@ -340,7 +344,7 @@ export function MultiSeriesEvolutionChart({
                       {v != null ? (
                         <>
                           {' '}
-                          {formatSignedPctCompact(v, 1)}
+                          {s.id === 'irpf' ? formatPct(v, 1) : formatSignedPctCompact(v, 1)}
                         </>
                       ) : null}
                     </span>
@@ -587,10 +591,7 @@ export function MultiSeriesEvolutionChart({
                                   : 'text-neutral-800',
                             ].join(' ')}
                           >
-                            Acumulado (vs {baselineYear}): {yFormat(v)}
-                            <span className="text-neutral-500"> · </span>
-                            Intra {hoveredYear}:{' '}
-                            {yoy != null && Number.isFinite(yoy) ? yFormat(yoy) : '—'}
+                            Valor en {hoveredYear}: {yFormat(v)}
                           </p>
                           {pt.deltaEurVsBaselineConstant != null &&
                           Number.isFinite(pt.deltaEurVsBaselineConstant) ? (

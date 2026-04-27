@@ -127,10 +127,11 @@ export function LandingPage() {
       const f = precios2012HastaAnio(year)
       return round2(nom.salarioNeto / f)
     }
-    const irpfValue = (year: TaxYear) => round2(nominaEscenario(year).irpfFinal / precios2012HastaAnio(year))
+    const irpfSobreBrutoPct = (year: TaxYear) => {
+      if (g <= 0) return 0
+      return round2((100 * nominaEscenario(year).irpfFinal) / g)
+    }
     const baseNet = netoEur2012(2012)
-    const baseIrpf = irpfValue(2012)
-
     if (baseNet > 0) {
       out.push({
         id: 'poder',
@@ -152,29 +153,25 @@ export function LandingPage() {
         }),
       })
     }
-    if (baseIrpf > 0) {
-      out.push({
-        id: 'irpf',
-        label: 'IRPF retenido',
-        variant: 'lavender',
-        points: TAX_YEARS.map((year, i) => {
-          const irpf = irpfValue(year)
-          const prevYear = i > 0 ? TAX_YEARS[i - 1]! : null
-          const prevIrpf = prevYear != null ? irpfValue(prevYear) : null
-          const yoy =
-            prevIrpf != null && prevIrpf > 0 && year !== 2012
-              ? ((irpf / prevIrpf - 1) * 100)
-              : null
-          const dConst = round2(irpf - baseIrpf)
-          return {
-            year,
-            value: (irpf / baseIrpf - 1) * 100,
-            yoyPercent: year === 2012 ? null : yoy,
-            deltaEurVsBaselineConstant: dConst,
-          }
-        }),
-      })
-    }
+    out.push({
+      id: 'irpf',
+      label: 'IRPF',
+      variant: 'lavender',
+      points: TAX_YEARS.map((year, i) => {
+        const irpfPct = irpfSobreBrutoPct(year)
+        const prevYear = i > 0 ? TAX_YEARS[i - 1]! : null
+        const prevIrpfPct = prevYear != null ? irpfSobreBrutoPct(prevYear) : null
+        const yoy =
+          prevIrpfPct != null && prevIrpfPct > 0 && year !== 2012
+            ? ((irpfPct / prevIrpfPct - 1) * 100)
+            : null
+        return {
+          year,
+          value: irpfPct,
+          yoyPercent: year === 2012 ? null : yoy,
+        }
+      }),
+    })
     return out
   }, [quickGrossAnnual, quickCalcYear, escenarioIrpfDeflactado])
 
@@ -196,16 +193,13 @@ export function LandingPage() {
           irpfMonetaryScaleFactor: deflactado ? precios2012HastaAnio(year) : 1,
         })
       const netoEur2012 = (year: TaxYear) => round2(nomina(year).salarioNeto / precios2012HastaAnio(year))
-      const irpfEur2012 = (year: TaxYear) => round2(nomina(year).irpfFinal / precios2012HastaAnio(year))
+      const irpfSobreBrutoPct = (year: TaxYear) => (g <= 0 ? 0 : round2((100 * nomina(year).irpfFinal) / g))
       const baseNet = netoEur2012(2012)
-      const baseIrpf = irpfEur2012(2012)
       const vals: number[] = []
       if (baseNet > 0) {
         for (const year of TAX_YEARS) vals.push((netoEur2012(year) / baseNet - 1) * 100)
       }
-      if (baseIrpf > 0) {
-        for (const year of TAX_YEARS) vals.push((irpfEur2012(year) / baseIrpf - 1) * 100)
-      }
+      for (const year of TAX_YEARS) vals.push(irpfSobreBrutoPct(year))
       return vals
     }
     const all = [...ipcVals, ...scenarioValues(false), ...scenarioValues(true)]
@@ -326,14 +320,6 @@ export function LandingPage() {
           </div>
         </div>
 
-        <div className="mt-5 w-full shrink-0 sm:mt-6">
-          <PurchasingPowerRefYearExplorer
-            currentYear={quickCalcYear}
-            grossNominal={quickGrossAnnual}
-            netNominal={quickNetAnnual}
-          />
-        </div>
-
         <div className="mt-8 w-full shrink-0 sm:mt-10" aria-label="Evolución comparada">
           <div className="flex min-w-0 flex-col gap-5 rounded-xl bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-7">
             <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -405,6 +391,14 @@ export function LandingPage() {
               }
             />
           </div>
+        </div>
+
+        <div className="mt-5 w-full shrink-0 sm:mt-6">
+          <PurchasingPowerRefYearExplorer
+            currentYear={quickCalcYear}
+            grossNominal={quickGrossAnnual}
+            netNominal={quickNetAnnual}
+          />
         </div>
 
         <div className="h-8 w-full shrink-0 sm:h-10" aria-hidden="true" />
