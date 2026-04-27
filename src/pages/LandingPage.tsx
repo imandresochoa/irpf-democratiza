@@ -13,7 +13,7 @@ import {
 } from '../domain/tax'
 import { useQuickGross } from '../context/QuickGrossContext'
 import { PurchasingPowerRefYearExplorer } from '../components/PurchasingPowerRefYearExplorer'
-import { PayrollYearComparisonTable } from '../components/PayrollYearComparisonTable'
+import { PayrollYearLensSection } from '../components/PayrollYearLensSection'
 import { EurAmountInput } from '../components/EurAmountInput'
 import { NetEvolutionChart } from '../components/NetEvolutionChart'
 import { MultiSeriesEvolutionChart, type MultiSeries } from '../components/MultiSeriesEvolutionChart'
@@ -21,7 +21,7 @@ import { formatEur, formatPct, parseEurInputToNumber } from '../lib/format'
 
 /** Caja de la tabla única año a año (nómina / coste). */
 const kComparisonTableCardClass =
-  'flex min-w-0 flex-col gap-5 rounded-xl border border-neutral-200/70 bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-6'
+  'flex min-w-0 flex-col gap-5 rounded-xl bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-6'
 const toggleBtnBase =
   'inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]'
 const comparadaTitleClass =
@@ -457,24 +457,21 @@ export function LandingPage() {
         </div>
 
         <div className="h-8 w-full shrink-0 sm:h-10" aria-hidden="true" />
-        <div className="w-full shrink-0" aria-label="Nómina y coste por ejercicio">
+        <div className="w-full shrink-0" aria-label="Coste de vida por ejercicio">
           <div className={kComparisonTableCardClass}>
             <div className="min-w-0">
               <h2
                 className="m-0 text-xl font-semibold text-neutral-900 [font-family:var(--font-serif)] sm:text-2xl"
               >
-                Nómina año a año
+                Coste de vida
               </h2>
               <p className="mt-2 m-0 max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
-                Mismo <strong className="font-semibold text-neutral-800">bruto anual nominal</strong> en euros
-                de {quickCalcYear} (el que has escrito) en todas las filas; en cada año se aplica la norma fiscal
-                de ese ejercicio. Cotizaciones, IRPF, neto y coste total son{' '}
-                <strong className="font-semibold text-neutral-800">importes nominales</strong> de ese año, como
-                en una nómina de ese periodo (sin reexpresar con el IPC entre ejercicios). Se muestran dos recibos
-                (2026 y un año que eliges), con el orden bruto → retenciones → indicadores → neto anual.
+                Comprueba qué porcentaje de tu sueldo dedicas a la compra, alquiler, luz y gas y
+                vivienda, y como ha evolucionado con los años. Son estimaciones basadas en datos
+                oficiales.
               </p>
             </div>
-            <PayrollYearComparisonTable rows={payrollComparisonRows} grossNominalYear={quickCalcYear} />
+            <PayrollYearLensSection rows={payrollComparisonRows} grossNominalYear={quickCalcYear} />
           </div>
         </div>
       </section>

@@ -139,6 +139,81 @@ export function MetodologiaCalculosPage() {
       <div className={formula}>
         Mejora anual = Neto con IRPF deflactado − Neto con IRPF actual
       </div>
+
+      <h2 className={h2}>Coste de vida del año seleccionado</h2>
+      <p className={`m-0 ${prose}`}>
+        En la sección “Nómina año a año”, junto al recibo del año, mostramos cinco partidas habituales
+        del hogar y qué porcentaje supondrían sobre tu neto si tuvieras ese mismo bruto en ese
+        ejercicio. Cada partida tiene un punto de partida en euros de 2012 (encuesta oficial del INE)
+        que proyectamos a cada año aplicando el IPC del subgrupo correspondiente.
+      </p>
+
+      <h3 className={h3}>Cesta, alquiler, luz y gas, combustible</h3>
+      <p className={`m-0 ${prose}`}>
+        Mismo método para las cuatro: tomamos el gasto medio anual del hogar en 2012 según la Encuesta
+        de Presupuestos Familiares y lo movemos cada año con el IPC oficial del subgrupo concreto.
+      </p>
+      <div className={formula}>
+        Importe<sub>t</sub> = Gasto<sub>2012</sub> × Factor IPC subgrupo<sub>2012→t</sub>
+      </div>
+      <p className={`m-0 ${prose}`}>
+        El factor IPC del subgrupo es el producto encadenado de las variaciones anuales diciembre a
+        diciembre que publica el INE para cada cesta:
+      </p>
+      <ul className={`mt-2 list-disc space-y-2 pl-6 ${prose}`}>
+        <li>
+          <strong className="font-semibold text-neutral-900">Cesta de la compra familiar</strong>:
+          subgrupo 01,
+          “Alimentos y bebidas no alcohólicas”.
+        </li>
+        <li>
+          <strong className="font-semibold text-neutral-900">Alquiler mensual</strong>: subgrupo 04.1,
+          “Alquileres reales por la vivienda”.
+        </li>
+        <li>
+          <strong className="font-semibold text-neutral-900">Luz y gas en casa</strong>: subgrupo 04.5,
+          “Electricidad, gas y otros combustibles”.
+        </li>
+        <li>
+          <strong className="font-semibold text-neutral-900">Combustible</strong>: subclase 07.2.2,
+          “Carburantes y lubricantes para vehículos personales”.
+        </li>
+      </ul>
+      <p className={example}>
+        Para mostrar el peso sobre tu neto usamos tu neto del año dividido entre 12: porcentaje sobre
+        el neto mensual.
+      </p>
+      <div className={formula}>% sobre tu neto = (Importe<sub>t</sub> / (Neto<sub>t</sub> / 12)) × 100</div>
+
+      <h3 className={h3}>Vivienda en propiedad (€/m² y total 80 m²)</h3>
+      <p className={`m-0 ${prose}`}>
+        Partimos del precio medio del metro cuadrado de la vivienda libre publicado para 2012 y lo
+        movemos cada año con el Índice de Precios de Vivienda (IPV) del INE.
+      </p>
+      <div className={formula}>
+        €/m²<sub>t</sub> = €/m²<sub>2012</sub> × Factor IPV<sub>2012→t</sub>
+      </div>
+      <div className={formula}>Total piso 80 m²<sub>t</sub> = €/m²<sub>t</sub> × 80</div>
+      <p className={`m-0 ${prose}`}>
+        El indicador “años de neto” es cuántos años de tu salario neto del año necesitarías para pagar
+        ese piso, sin contar impuestos ni intereses:
+      </p>
+      <div className={formula}>Años de neto = Total piso<sub>t</sub> / Neto<sub>t</sub></div>
+
+      <h3 className={h3}>Fuentes</h3>
+      <ul className={`mt-2 list-disc space-y-2 pl-6 ${prose}`}>
+        <li>
+          INE — Índice de Precios de Consumo (IPC), índices nacionales por subgrupo y subclase ECOICOP.
+        </li>
+        <li>
+          INE — Encuesta de Presupuestos Familiares 2012, gasto medio anual por hogar como ancla.
+        </li>
+        <li>INE — Índice de Precios de Vivienda (IPV), base 2015.</li>
+        <li>
+          Ministerio de Transportes y Movilidad — “Estadística de precios de vivienda libre”, 4T 2012,
+          como referencia inicial en €/m².
+        </li>
+      </ul>
     </article>
   )
 }

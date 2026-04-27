@@ -10,7 +10,7 @@ import {
 import { formatEur, formatPct } from '../lib/format'
 
 const kCompareBoxClass =
-  'flex min-h-0 min-w-0 flex-1 flex-col justify-between rounded-lg bg-white/30 p-4 sm:min-h-[11.5rem] sm:p-5'
+  'flex min-h-0 min-w-0 flex-1 flex-col justify-between rounded-xl border border-neutral-200/80 bg-[var(--color-surface)] p-4 sm:min-h-[11.5rem] sm:p-5'
 const kNetCompareFigureClass = 'm-0 text-2xl font-semibold leading-tight tabular-nums text-neutral-900 sm:text-3xl'
 
 type PurchasingPowerRefYearExplorerProps = {
