@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
+import type { CSSProperties } from 'react'
 import { formatEur, formatEurNumber, formatEurNumberNoGrouping, parseEurInputToNumber } from '../lib/format'
 
 function formatBlurredDisplay(s: string): string {
@@ -11,6 +12,7 @@ function formatBlurredDisplay(s: string): string {
 export type EurAmountInputProps = {
   id?: string
   className?: string
+  style?: CSSProperties
   value: string
   onValueChange: (v: string) => void
   placeholder?: string
@@ -30,6 +32,7 @@ export type EurAmountInputProps = {
 export function EurAmountInput({
   id,
   className,
+  style,
   value,
   onValueChange,
   placeholder,
@@ -54,6 +57,7 @@ export function EurAmountInput({
       type="text"
       inputMode="decimal"
       className={className}
+      style={style}
       value={show}
       autoComplete={autoComplete}
       placeholder={placeholder}

@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom'
-
 const prose =
   'max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)] sm:text-lg'
 const h2 = 'mt-10 mb-3 text-xl font-semibold text-neutral-900 [font-family:var(--font-serif)] sm:text-2xl'
@@ -7,15 +5,6 @@ const h2 = 'mt-10 mb-3 text-xl font-semibold text-neutral-900 [font-family:var(-
 export function LegalPage() {
   return (
     <article className="pb-16">
-      <p className="m-0 mb-6 [font-family:var(--font-sans)]">
-        <Link
-          to="/"
-          className="text-base font-medium text-neutral-700 underline-offset-2 hover:text-neutral-900 hover:underline"
-        >
-          ← Volver al comparador
-        </Link>
-      </p>
-
       <h1 className="m-0 text-3xl font-semibold leading-tight tracking-[-0.02em] text-neutral-900 [font-family:var(--font-serif)] sm:text-4xl">
         Aviso legal y privacidad
       </h1>
