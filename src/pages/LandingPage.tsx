@@ -121,9 +121,7 @@ export function LandingPage() {
     if (baseNet > 0) {
       out.push({
         id: 'poder',
-        label: escenarioIrpfDeflactado
-          ? 'Poder adquisitivo (neto real, IRPF deflactado)'
-          : 'Poder adquisitivo (neto real, IRPF vigente)',
+        label: 'Poder adquisitivo (neto real)',
         variant: 'green',
         points: TAX_YEARS.map((year, i) => {
           const net = netoEur2012(year)
@@ -146,9 +144,7 @@ export function LandingPage() {
     if (baseIrpf > 0) {
       out.push({
         id: 'irpf',
-        label: escenarioIrpfDeflactado
-          ? 'IRPF retenido (escenario deflactado, € 2012)'
-          : 'IRPF retenido (vigente, € 2012)',
+        label: 'IRPF retenido',
         variant: 'lavender',
         points: TAX_YEARS.map((year, i) => {
           const irpf = irpfValue(year)
@@ -172,6 +168,42 @@ export function LandingPage() {
     }
     return out
   }, [quickGrossAnnual, quickCalcYear, escenarioIrpfDeflactado])
+
+  /**
+   * Dominio Y fijo para que el eje no cambie al alternar el toggle:
+   * incluye IPC + series fiscales bajo escenario OFF y ON.
+   */
+  const multiSeriesYDomain = useMemo<readonly [number, number] | undefined>(() => {
+    const ipcVals = TAX_YEARS.map((year) => (precios2012HastaAnio(year) - 1) * 100)
+    if (quickGrossAnnual == null) {
+      const lo = Math.min(0, ...ipcVals)
+      const hi = Math.max(0, ...ipcVals)
+      return [lo, hi] as const
+    }
+    const g = quickGrossAnnual
+    const scenarioValues = (deflactado: boolean): number[] => {
+      const nomina = (year: TaxYear) =>
+        computeNominaAgregada(g, year, undefined, {
+          irpfMonetaryScaleFactor: deflactado ? precios2012HastaAnio(year) : 1,
+        })
+      const netoEur2012 = (year: TaxYear) => round2(nomina(year).salarioNeto / precios2012HastaAnio(year))
+      const irpfEur2012 = (year: TaxYear) => round2(nomina(year).irpfFinal / precios2012HastaAnio(year))
+      const baseNet = netoEur2012(2012)
+      const baseIrpf = irpfEur2012(2012)
+      const vals: number[] = []
+      if (baseNet > 0) {
+        for (const year of TAX_YEARS) vals.push((netoEur2012(year) / baseNet - 1) * 100)
+      }
+      if (baseIrpf > 0) {
+        for (const year of TAX_YEARS) vals.push((irpfEur2012(year) / baseIrpf - 1) * 100)
+      }
+      return vals
+    }
+    const all = [...ipcVals, ...scenarioValues(false), ...scenarioValues(true)]
+    const lo = Math.min(0, ...all)
+    const hi = Math.max(0, ...all)
+    return [lo, hi] as const
+  }, [quickGrossAnnual, quickCalcYear])
 
   return (
     <div className="space-y-10">
@@ -292,11 +324,9 @@ export function LandingPage() {
                 <strong className="font-semibold text-neutral-800">mismo bruto nominal</strong> que has
                 escrito en todos los ejercicios; cada punto es el % respecto a 2012 al pasar la nómina a{' '}
                 <strong className="font-semibold text-neutral-800">€ constantes 2012</strong> (si el nominal
-                no sube como el IPC, el neto real cae). El toggle aplica un escenario contrafactual donde el
-                IRPF se deflacta por IPC y por tanto cambia tanto la serie de IRPF como la de poder
-                adquisitivo. Al pasar el cursor, leyenda y recuadro muestran acumulado, intra-anual y la
-                diferencia en euros (constantes 2012 y equivalente nominal del año de la calculadora). Clic
-                en una serie para resaltarla.
+                no sube como el IPC, el neto real cae). Al pasar el cursor, leyenda y recuadro muestran
+                acumulado, intra-anual y la diferencia en euros (constantes 2012 y equivalente nominal del año
+                de la calculadora). Clic en una serie para resaltarla.
               </p>
             </div>
             <div className="flex items-center justify-end">
@@ -311,13 +341,14 @@ export function LandingPage() {
                     : 'border-neutral-300 bg-white/70 text-neutral-800 hover:bg-white',
                 ].join(' ')}
               >
-                Escenario IRPF deflactado {escenarioIrpfDeflactado ? '(ON)' : '(OFF)'}
+                Deflactar IRPF {escenarioIrpfDeflactado ? '(ON)' : '(OFF)'}
               </button>
             </div>
             <MultiSeriesEvolutionChart
               series={multiSeriesVs2012}
               yFormat={(n) => formatPct(n, 1)}
               euroNominalRefYear={quickCalcYear}
+              yDomain={multiSeriesYDomain}
             />
           </div>
         </div>

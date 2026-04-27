@@ -54,6 +54,8 @@ type MultiSeriesEvolutionChartProps = {
   yAxisLabel?: string
   /** Si las series traen `deltaEurVsBaselineNominalRefYear`, etiqueta del año nominal (p. ej. calculadora). */
   euroNominalRefYear?: TaxYear
+  /** Dominio Y fijo opcional [min, max] para mantener escala estable entre vistas. */
+  yDomain?: readonly [number, number]
 }
 
 const variantStyles: Record<ChartVariant, { fillVar: string; lineVar: string }> = {
@@ -129,6 +131,7 @@ export function MultiSeriesEvolutionChart({
   baselineYear = 2012,
   yAxisLabel,
   euroNominalRefYear,
+  yDomain,
 }: MultiSeriesEvolutionChartProps) {
   const gradId = useId()
   const labelledById = useId()
@@ -177,8 +180,8 @@ export function MultiSeriesEvolutionChart({
       }
     }
     const allValues = usableSeries.flatMap((s) => s.points.map((p) => p.value))
-    let mn = Math.min(...allValues, 0)
-    let mx = Math.max(...allValues, 0)
+    let mn = yDomain?.[0] ?? Math.min(...allValues, 0)
+    let mx = yDomain?.[1] ?? Math.max(...allValues, 0)
     if (mn === mx) {
       mn -= 1
       mx += 1
@@ -200,7 +203,7 @@ export function MultiSeriesEvolutionChart({
       map.set(s.id, layout)
     }
     return { layoutBySeries: map, mn, mx, pad, yTicks, yAxisHi, yAxisLo }
-  }, [usableSeries, years, yearToIndex])
+  }, [usableSeries, years, yearToIndex, yDomain])
 
   /** Hit-test solo sobre el tramo del plot (SVG + eje X), no la columna de ticks del eje Y,
    * para que x=0 y x=ancho correspondan a 2012 y al último año (p. ej. 2026). */
