@@ -58,6 +58,8 @@ type MultiSeriesEvolutionChartProps = {
   yDomain?: readonly [number, number]
   /** Control opcional alineado con los selectores (leyenda) del gráfico. */
   topRightControl?: ReactNode
+  /** Notifica el año más cercano cuando se hace clic en el área del plot. */
+  onYearClick?: (year: TaxYear) => void
 }
 
 const variantStyles: Record<ChartVariant, { fillVar: string; lineVar: string }> = {
@@ -135,6 +137,7 @@ export function MultiSeriesEvolutionChart({
   euroNominalRefYear,
   yDomain,
   topRightControl,
+  onYearClick,
 }: MultiSeriesEvolutionChartProps) {
   const gradId = useId()
   const labelledById = useId()
@@ -357,6 +360,18 @@ export function MultiSeriesEvolutionChart({
             onPointerEnter={(e) => onMove(e.clientX, e.clientY, e.currentTarget)}
             onPointerMove={(e) => onMove(e.clientX, e.clientY, e.currentTarget)}
             onPointerLeave={() => setHover(null)}
+            onClick={(e) => {
+              if (years.length === 0 || onYearClick == null) return
+              const r = e.currentTarget.getBoundingClientRect()
+              const xPx = e.clientX - r.left
+              const x = r.width > 0 ? Math.min(1, Math.max(0, xPx / r.width)) : 0
+              const idx =
+                years.length === 1
+                  ? 0
+                  : Math.max(0, Math.min(years.length - 1, Math.round(x * (years.length - 1))))
+              const y = years[idx]
+              if (y != null) onYearClick(y)
+            }}
           >
         <svg
           className="h-72 w-full sm:h-96"

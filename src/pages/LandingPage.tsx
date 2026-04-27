@@ -34,20 +34,14 @@ function formatSignedEur(n: number): string {
     currency: 'EUR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-    signDisplay: 'exceptZero',
     useGrouping: 'always',
   }).format(n)
-}
-
-function masOMenos(n: number): 'más' | 'menos' | 'igual' {
-  if (n > 0) return 'más'
-  if (n < 0) return 'menos'
-  return 'igual'
 }
 
 export function LandingPage() {
   const { quickGrossInput, setQuickGrossInput, quickCalcYear, calculatorSectionRef } = useQuickGross()
   const [escenarioIrpfDeflactado, setEscenarioIrpfDeflactado] = useState(false)
+  const [selectedComparadaYear, setSelectedComparadaYear] = useState<TaxYear | null>(null)
 
   const quickGrossAnnual = useMemo(() => {
     const value = parseEurInputToNumber(quickGrossInput)
@@ -124,7 +118,6 @@ export function LandingPage() {
     if (quickGrossAnnual == null) return out
 
     const g = quickGrossAnnual
-    const mRef = precios2012HastaAnio(quickCalcYear)
     const nominaEscenario = (year: TaxYear) =>
       computeNominaAgregada(g, year, undefined, {
         irpfMonetaryScaleFactor: escenarioIrpfDeflactado ? precios2012HastaAnio(year) : 1,
@@ -150,13 +143,11 @@ export function LandingPage() {
           const yoy =
             prevNet != null && prevNet > 0 && year !== 2012 ? ((net / prevNet - 1) * 100) : null
           const dConst = round2(net - baseNet)
-          const dNom = round2(dConst * mRef)
           return {
             year,
             value: (net / baseNet - 1) * 100,
             yoyPercent: year === 2012 ? null : yoy,
             deltaEurVsBaselineConstant: dConst,
-            deltaEurVsBaselineNominalRefYear: dNom,
           }
         }),
       })
@@ -175,13 +166,11 @@ export function LandingPage() {
               ? ((irpf / prevIrpf - 1) * 100)
               : null
           const dConst = round2(irpf - baseIrpf)
-          const dNom = round2(dConst * mRef)
           return {
             year,
             value: (irpf / baseIrpf - 1) * 100,
             yoyPercent: year === 2012 ? null : yoy,
             deltaEurVsBaselineConstant: dConst,
-            deltaEurVsBaselineNominalRefYear: dNom,
           }
         }),
       })
@@ -227,18 +216,18 @@ export function LandingPage() {
 
   const comparadaAbsSummary = useMemo(() => {
     if (quickGrossAnnual == null) return null
+    const targetYear = selectedComparadaYear ?? quickCalcYear
     const g = quickGrossAnnual
     const nomina = (year: TaxYear) =>
       computeNominaAgregada(g, year, undefined, {
         irpfMonetaryScaleFactor: escenarioIrpfDeflactado ? precios2012HastaAnio(year) : 1,
       })
-    const mRef = precios2012HastaAnio(quickCalcYear)
     const netoEur2012 = (year: TaxYear) => round2(nomina(year).salarioNeto / precios2012HastaAnio(year))
     const irpfEur2012 = (year: TaxYear) => round2(nomina(year).irpfFinal / precios2012HastaAnio(year))
-    const deltaPoderNomRef = round2((netoEur2012(quickCalcYear) - netoEur2012(2012)) * mRef)
-    const deltaIrpfNomRef = round2((irpfEur2012(quickCalcYear) - irpfEur2012(2012)) * mRef)
-    return { deltaPoderNomRef, deltaIrpfNomRef }
-  }, [quickGrossAnnual, quickCalcYear, escenarioIrpfDeflactado])
+    const netoRealTotal = netoEur2012(targetYear)
+    const irpfRealTotal = irpfEur2012(targetYear)
+    return { netoRealTotal, irpfRealTotal, targetYear }
+  }, [quickGrossAnnual, quickCalcYear, escenarioIrpfDeflactado, selectedComparadaYear])
 
   return (
     <div className="space-y-10">
@@ -246,7 +235,7 @@ export function LandingPage() {
         className="flex w-full min-h-[calc(100dvh-7rem)] flex-col sm:min-h-[calc(100vh-7rem)]"
         aria-label="Intro"
       >
-        <div className="min-h-0 w-full flex-1 basis-0" aria-hidden="true" />
+        <div className="min-h-0 w-full flex-1 basis-28 sm:basis-40" aria-hidden="true" />
         <div className="w-full shrink-0">
           <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-12 lg:gap-x-4 lg:gap-y-0">
             <div className="@container min-w-0 lg:col-span-7">
@@ -358,14 +347,12 @@ export function LandingPage() {
                     IRPF:
                   </span>
                   <span className={`${comparadaMetricClass} text-neutral-900`}>
-                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.deltaIrpfNomRef) : '—'}
+                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.irpfRealTotal) : '—'}
                   </span>
                   <span className="pointer-events-none absolute right-0 top-full z-10 mt-1 hidden max-w-xs rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-normal leading-snug text-neutral-700 shadow-sm group-hover:block group-focus-within:block">
                     {comparadaAbsSummary == null
-                      ? 'Diferencia anual en IRPF frente a 2012, con el mismo bruto.'
-                      : masOMenos(comparadaAbsSummary.deltaIrpfNomRef) === 'igual'
-                        ? 'Pagas lo mismo al a&ntilde;o en IRPF que en 2012, con el mismo bruto.'
-                        : `Pagas ${masOMenos(comparadaAbsSummary.deltaIrpfNomRef)} al a&ntilde;o en IRPF que en 2012, con el mismo bruto.`}
+                      ? 'Total anual de IRPF real con tu bruto actual (euros constantes 2012).'
+                      : `Total anual de IRPF real retenido en ${comparadaAbsSummary.targetYear}: ${formatSignedEur(comparadaAbsSummary.irpfRealTotal)} (euros constantes 2012).`}
                   </span>
                 </div>
                 <div className="group relative flex items-baseline gap-2">
@@ -373,16 +360,12 @@ export function LandingPage() {
                     PODER ADQUISITIVO:
                   </span>
                   <span className={`${comparadaMetricClass} text-neutral-900`}>
-                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.deltaPoderNomRef) : '—'}
+                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.netoRealTotal) : '—'}
                   </span>
                   <span className="pointer-events-none absolute right-0 top-full z-10 mt-1 hidden max-w-xs rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-normal leading-snug text-neutral-700 shadow-sm group-hover:block group-focus-within:block">
                     {comparadaAbsSummary == null
-                      ? 'Cambio anual de poder adquisitivo frente a 2012, con el mismo bruto.'
-                      : masOMenos(comparadaAbsSummary.deltaPoderNomRef) === 'igual'
-                        ? 'Tu poder adquisitivo anual es igual que en 2012, con el mismo bruto.'
-                        : masOMenos(comparadaAbsSummary.deltaPoderNomRef) === 'más'
-                          ? 'Tienes m&aacute;s poder adquisitivo anual que en 2012, con el mismo bruto.'
-                          : 'Tienes menos poder adquisitivo anual que en 2012, con el mismo bruto.'}
+                      ? 'Total anual de neto real con tu bruto actual (euros constantes 2012).'
+                      : `Total anual de neto real en ${comparadaAbsSummary.targetYear}: ${formatSignedEur(comparadaAbsSummary.netoRealTotal)} (euros constantes 2012).`}
                   </span>
                 </div>
               </div>
@@ -394,15 +377,15 @@ export function LandingPage() {
                 escrito en todos los ejercicios; cada punto es el % respecto a 2012 al pasar la nómina a{' '}
                 <strong className="font-semibold text-neutral-800">€ constantes 2012</strong> (si el nominal
                 no sube como el IPC, el neto real cae). Al pasar el cursor, leyenda y recuadro muestran
-                acumulado, intra-anual y la diferencia en euros (constantes 2012 y equivalente nominal del año
-                de la calculadora). Clic en una serie para resaltarla.
+                acumulado, intra-anual y la diferencia en euros constantes 2012. Clic en una serie para
+                resaltarla.
               </p>
             </div>
             <MultiSeriesEvolutionChart
               series={multiSeriesVs2012}
               yFormat={(n) => formatPct(n, 1)}
-              euroNominalRefYear={quickCalcYear}
               yDomain={multiSeriesYDomain}
+              onYearClick={(year) => setSelectedComparadaYear(year)}
               topRightControl={
                 <button
                   type="button"

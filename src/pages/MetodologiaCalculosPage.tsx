@@ -133,10 +133,10 @@ export function MetodologiaCalculosPage() {
       <p className={`m-0 ${prose}`}>
         Con el <strong className="font-semibold text-neutral-900">mismo bruto nominal</strong> en cada
         ejercicio, se calcula la nómina del año, se deflacta neto (e IRPF) a € 2012 dividiendo por{' '}
-        <code className={codePath}>precios2012HastaAnio(año)</code>, y se muestra el % respecto a 2012. La
-        diferencia en euros vs 2012 en esa base es la resta de esos importes en € 2012; el equivalente en
-        € nominales del año de la calculadora multiplica esa diferencia por{' '}
-        <code className={codePath}>precios2012HastaAnio(añoCalculadora)</code>.
+        <code className={codePath}>precios2012HastaAnio(año)</code>, y se muestra el % respecto a 2012. Los
+        importes en euros del bloque superior se muestran en términos reales (euros constantes 2012): por
+        defecto usan el año de la calculadora y, al hacer clic en un punto del gráfico, usan ese año
+        seleccionado.
       </p>
     </article>
   )
