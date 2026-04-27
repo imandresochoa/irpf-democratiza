@@ -1,4 +1,4 @@
-import { useCallback, useId, useMemo, useState, type CSSProperties } from 'react'
+import { useCallback, useId, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import type { TaxYear } from '../domain/tax'
 import { formatEur, formatPct, formatSignedPctCompact } from '../lib/format'
 
@@ -56,6 +56,8 @@ type MultiSeriesEvolutionChartProps = {
   euroNominalRefYear?: TaxYear
   /** Dominio Y fijo opcional [min, max] para mantener escala estable entre vistas. */
   yDomain?: readonly [number, number]
+  /** Control opcional alineado con los selectores (leyenda) del gráfico. */
+  topRightControl?: ReactNode
 }
 
 const variantStyles: Record<ChartVariant, { fillVar: string; lineVar: string }> = {
@@ -132,6 +134,7 @@ export function MultiSeriesEvolutionChart({
   yAxisLabel,
   euroNominalRefYear,
   yDomain,
+  topRightControl,
 }: MultiSeriesEvolutionChartProps) {
   const gradId = useId()
   const labelledById = useId()
@@ -266,70 +269,56 @@ export function MultiSeriesEvolutionChart({
 
   return (
     <div className={['flex w-full min-w-0 flex-col gap-3 sm:gap-4', className ?? ''].join(' ')}>
-      <ul
-        className="m-0 flex list-none flex-wrap items-center gap-x-4 gap-y-2 p-0 [font-family:var(--font-sans)]"
-        aria-label="Series del gráfico (toca o haz clic para resaltar)"
-      >
-        {usableSeries.map((s) => {
-          const isFocused = focusedId === s.id
-          const dim = focusedId != null && !isFocused
-          const colors = variantStyles[s.variant]
-          const yearForValue = hoveredYear ?? lastYear
-          const pt = pointAt(s, yearForValue)
-          const v = pt?.value ?? null
-          return (
-            <li key={s.id} className="m-0 p-0">
-              <button
-                type="button"
-                onClick={() => setFocusedId((prev) => (prev === s.id ? null : s.id))}
-                aria-pressed={isFocused}
-                className={[
-                  'inline-flex min-w-0 max-w-full items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-opacity',
-                  'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]',
-                  isFocused
-                    ? 'bg-white/70 text-neutral-900 shadow-sm'
-                    : 'bg-white/30 text-neutral-700 hover:bg-white/60',
-                  dim ? 'opacity-50' : 'opacity-100',
-                ].join(' ')}
-              >
-                <span
-                  aria-hidden
-                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: colors.lineVar }}
-                />
-                <span className="flex min-w-0 max-w-full flex-col items-start gap-0.5">
-                  <span className="min-w-0 truncate font-medium tabular-nums text-neutral-900">
-                    {s.label}
-                    {v != null ? (
-                      <>
-                        {' '}
-                        {formatSignedPctCompact(v, 1)}
-                      </>
-                    ) : null}
+      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+        <ul
+          className="m-0 flex list-none flex-wrap items-center gap-x-4 gap-y-2 p-0 [font-family:var(--font-sans)]"
+          aria-label="Series del gráfico (toca o haz clic para resaltar)"
+        >
+          {usableSeries.map((s) => {
+            const isFocused = focusedId === s.id
+            const dim = focusedId != null && !isFocused
+            const colors = variantStyles[s.variant]
+            const yearForValue = hoveredYear ?? lastYear
+            const pt = pointAt(s, yearForValue)
+            const v = pt?.value ?? null
+            return (
+              <li key={s.id} className="m-0 p-0">
+                <button
+                  type="button"
+                  onClick={() => setFocusedId((prev) => (prev === s.id ? null : s.id))}
+                  aria-pressed={isFocused}
+                  style={{
+                    backgroundColor: `color-mix(in srgb, ${colors.fillVar} ${dim ? 14 : isFocused ? 28 : 20}%, var(--color-surface))`,
+                  }}
+                  className={[
+                    'inline-flex min-w-0 max-w-full items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-opacity',
+                    'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]',
+                    'text-neutral-900',
+                  ].join(' ')}
+                >
+                  <span
+                    aria-hidden
+                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: colors.lineVar }}
+                  />
+                  <span className="flex min-w-0 max-w-full flex-col items-start gap-0.5">
+                    <span className="min-w-0 truncate font-medium tabular-nums text-neutral-900">
+                      {s.label}
+                      {v != null ? (
+                        <>
+                          {' '}
+                          {formatSignedPctCompact(v, 1)}
+                        </>
+                      ) : null}
+                    </span>
                   </span>
-                  {(() => {
-                    const e = pt?.deltaEurVsBaselineConstant
-                    if (e == null || !Number.isFinite(e)) return null
-                    return (
-                      <span className="max-w-full truncate text-[11px] font-normal tabular-nums text-neutral-600">
-                        {formatEur(e, 0)} const. {baselineYear}
-                        {euroNominalRefYear != null &&
-                        pt?.deltaEurVsBaselineNominalRefYear != null &&
-                        Number.isFinite(pt.deltaEurVsBaselineNominalRefYear) ? (
-                          <>
-                            {' · '}
-                            {formatEur(pt.deltaEurVsBaselineNominalRefYear, 0)} nom. {euroNominalRefYear}
-                          </>
-                        ) : null}
-                      </span>
-                    )
-                  })()}
-                </span>
-              </button>
-            </li>
-          )
-        })}
-      </ul>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+        {topRightControl != null ? <div className="shrink-0 sm:pt-0.5">{topRightControl}</div> : null}
+      </div>
 
       <div
         className="w-full min-h-0 touch-none select-none overflow-visible"
@@ -380,8 +369,8 @@ export function MultiSeriesEvolutionChart({
               const colors = variantStyles[s.variant]
               return (
                 <linearGradient key={s.id} id={`${gradId}-${s.id}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={colors.fillVar} stopOpacity={0.18} />
-                  <stop offset="100%" stopColor={colors.fillVar} stopOpacity={0.02} />
+                  <stop offset="0%" stopColor={colors.fillVar} stopOpacity={0.26} />
+                  <stop offset="100%" stopColor={colors.fillVar} stopOpacity={0.06} />
                 </linearGradient>
               )
             })}

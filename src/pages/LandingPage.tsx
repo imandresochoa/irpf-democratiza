@@ -23,7 +23,27 @@ import { formatEur, formatPct, parseEurInputToNumber } from '../lib/format'
 const kComparisonTableCardClass =
   'flex min-w-0 flex-col gap-5 rounded-xl border border-neutral-200/70 bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-6'
 const toggleBtnBase =
-  'inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]'
+  'inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]'
+const comparadaTitleClass =
+  'm-0 text-2xl font-semibold leading-tight text-neutral-900 sm:text-3xl'
+const comparadaMetricClass = 'm-0 text-sm font-medium leading-tight'
+
+function formatSignedEur(n: number): string {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+    signDisplay: 'exceptZero',
+    useGrouping: 'always',
+  }).format(n)
+}
+
+function masOMenos(n: number): 'más' | 'menos' | 'igual' {
+  if (n > 0) return 'más'
+  if (n < 0) return 'menos'
+  return 'igual'
+}
 
 export function LandingPage() {
   const { quickGrossInput, setQuickGrossInput, quickCalcYear, calculatorSectionRef } = useQuickGross()
@@ -205,6 +225,21 @@ export function LandingPage() {
     return [lo, hi] as const
   }, [quickGrossAnnual, quickCalcYear])
 
+  const comparadaAbsSummary = useMemo(() => {
+    if (quickGrossAnnual == null) return null
+    const g = quickGrossAnnual
+    const nomina = (year: TaxYear) =>
+      computeNominaAgregada(g, year, undefined, {
+        irpfMonetaryScaleFactor: escenarioIrpfDeflactado ? precios2012HastaAnio(year) : 1,
+      })
+    const mRef = precios2012HastaAnio(quickCalcYear)
+    const netoEur2012 = (year: TaxYear) => round2(nomina(year).salarioNeto / precios2012HastaAnio(year))
+    const irpfEur2012 = (year: TaxYear) => round2(nomina(year).irpfFinal / precios2012HastaAnio(year))
+    const deltaPoderNomRef = round2((netoEur2012(quickCalcYear) - netoEur2012(2012)) * mRef)
+    const deltaIrpfNomRef = round2((irpfEur2012(quickCalcYear) - irpfEur2012(2012)) * mRef)
+    return { deltaPoderNomRef, deltaIrpfNomRef }
+  }, [quickGrossAnnual, quickCalcYear, escenarioIrpfDeflactado])
+
   return (
     <div className="space-y-10">
       <section
@@ -313,12 +348,46 @@ export function LandingPage() {
 
         <div className="mt-8 w-full shrink-0 sm:mt-10" aria-label="Evolución comparada">
           <div className="flex min-w-0 flex-col gap-5 rounded-xl bg-neutral-100 p-5 [font-family:var(--font-sans)] sm:gap-6 sm:p-7">
-            <div>
-              <h2
-                className="m-0 text-2xl font-semibold leading-tight text-neutral-900 [font-family:var(--font-serif)] sm:text-3xl"
-              >
+            <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <h2 className={comparadaTitleClass}>
                 Evolución comparada
               </h2>
+              <div className="flex shrink-0 items-end gap-6">
+                <div className="group relative flex items-baseline gap-2">
+                  <span className={`${comparadaMetricClass} text-neutral-900`}>
+                    IRPF:
+                  </span>
+                  <span className={`${comparadaMetricClass} text-neutral-900`}>
+                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.deltaIrpfNomRef) : '—'}
+                  </span>
+                  <span className="pointer-events-none absolute right-0 top-full z-10 mt-1 hidden max-w-xs rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-normal leading-snug text-neutral-700 shadow-sm group-hover:block group-focus-within:block">
+                    {comparadaAbsSummary == null
+                      ? 'Diferencia anual en IRPF frente a 2012, con el mismo bruto.'
+                      : masOMenos(comparadaAbsSummary.deltaIrpfNomRef) === 'igual'
+                        ? 'Pagas lo mismo al a&ntilde;o en IRPF que en 2012, con el mismo bruto.'
+                        : `Pagas ${masOMenos(comparadaAbsSummary.deltaIrpfNomRef)} al a&ntilde;o en IRPF que en 2012, con el mismo bruto.`}
+                  </span>
+                </div>
+                <div className="group relative flex items-baseline gap-2">
+                  <span className={`${comparadaMetricClass} text-neutral-900`}>
+                    PODER ADQUISITIVO:
+                  </span>
+                  <span className={`${comparadaMetricClass} text-neutral-900`}>
+                    {comparadaAbsSummary ? formatSignedEur(comparadaAbsSummary.deltaPoderNomRef) : '—'}
+                  </span>
+                  <span className="pointer-events-none absolute right-0 top-full z-10 mt-1 hidden max-w-xs rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-normal leading-snug text-neutral-700 shadow-sm group-hover:block group-focus-within:block">
+                    {comparadaAbsSummary == null
+                      ? 'Cambio anual de poder adquisitivo frente a 2012, con el mismo bruto.'
+                      : masOMenos(comparadaAbsSummary.deltaPoderNomRef) === 'igual'
+                        ? 'Tu poder adquisitivo anual es igual que en 2012, con el mismo bruto.'
+                        : masOMenos(comparadaAbsSummary.deltaPoderNomRef) === 'más'
+                          ? 'Tienes m&aacute;s poder adquisitivo anual que en 2012, con el mismo bruto.'
+                          : 'Tienes menos poder adquisitivo anual que en 2012, con el mismo bruto.'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div>
               <p className="mt-2 m-0 max-w-3xl text-base leading-relaxed text-neutral-700 [font-family:var(--font-serif)]">
                 IPC acumulado (nivel de precios). Neto e IRPF usan el{' '}
                 <strong className="font-semibold text-neutral-800">mismo bruto nominal</strong> que has
@@ -329,26 +398,26 @@ export function LandingPage() {
                 de la calculadora). Clic en una serie para resaltarla.
               </p>
             </div>
-            <div className="flex items-center justify-end">
-              <button
-                type="button"
-                aria-pressed={escenarioIrpfDeflactado}
-                onClick={() => setEscenarioIrpfDeflactado((v) => !v)}
-                className={[
-                  toggleBtnBase,
-                  escenarioIrpfDeflactado
-                    ? 'border-neutral-800 bg-neutral-900 text-white'
-                    : 'border-neutral-300 bg-white/70 text-neutral-800 hover:bg-white',
-                ].join(' ')}
-              >
-                Deflactar IRPF {escenarioIrpfDeflactado ? '(ON)' : '(OFF)'}
-              </button>
-            </div>
             <MultiSeriesEvolutionChart
               series={multiSeriesVs2012}
               yFormat={(n) => formatPct(n, 1)}
               euroNominalRefYear={quickCalcYear}
               yDomain={multiSeriesYDomain}
+              topRightControl={
+                <button
+                  type="button"
+                  aria-pressed={escenarioIrpfDeflactado}
+                  onClick={() => setEscenarioIrpfDeflactado((v) => !v)}
+                  className={[
+                    toggleBtnBase,
+                    escenarioIrpfDeflactado
+                      ? '!border-neutral-800 !bg-neutral-900 !text-white'
+                      : '!border-neutral-300 !bg-neutral-100 !text-neutral-800 hover:!border-neutral-800 hover:!bg-neutral-900 hover:!text-white',
+                  ].join(' ')}
+                >
+                  Deflactar IRPF
+                </button>
+              }
             />
           </div>
         </div>
